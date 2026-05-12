@@ -8,7 +8,7 @@ load_dotenv()
 resend.api_key = os.environ.get("RESEND_API_KEY")
 
 
-def sendOTP(to: str, otp: str):
+def send_otp(to: str, otp: str):
     try:
         params: resend.Emails.SendParams = {
             "from": "Verify Email <verify@updates.memer.in>",

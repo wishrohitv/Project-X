@@ -1,9 +1,9 @@
-from backend.database import engine
-from backend.models import Users
-from backend.models.enums import NotificationType
-from backend.modules import sessionmaker
-from backend.repository.notificationRepository import _createNotification
-from backend.utils import Log, getUsername
+from database import engine
+from models import Users
+from models.enums import NotificationType
+from modules import sessionmaker
+from repository.notificationRepository import _createNotification
+from utils import Log, get_user_names
 
 Session = sessionmaker(bind=engine)
 session = Session()

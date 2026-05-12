@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     TIMESTAMP,
     ForeignKey,
     Integer,
@@ -10,7 +10,7 @@ from backend.modules import (
     mapped_column,
     relationship,
 )
-from backend.utils import datetimeUTC
+from utils import datetime_utc
 
 from .base import Base
 
@@ -26,7 +26,7 @@ class Reposts(Base):
     userID: Mapped[int] = mapped_column(Integer, ForeignKey("users.id"), nullable=False)
     postID: Mapped[int] = mapped_column(Integer, ForeignKey("posts.id"), nullable=False)
     createdAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP, nullable=False, default=datetimeUTC
+        TIMESTAMP, nullable=False, default=datetime_utc
     )
 
     def __repr__(self):

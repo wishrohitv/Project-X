@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     TIMESTAMP,
     ForeignKey,
     List,
@@ -9,7 +9,7 @@ from backend.modules import (
     mapped_column,
     relationship,
 )
-from backend.utils import datetimeUTC
+from utils import datetime_utc
 
 from .base import Base
 
@@ -22,10 +22,10 @@ class ReportedUsers(Base):
     isResolved: Mapped[bool] = mapped_column(default=False)
     description: Mapped[str] = mapped_column(String(500), nullable=True)
     createdAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=datetimeUTC()
+        TIMESTAMP(timezone=True), default=datetime_utc()
     )
     updatedAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=datetimeUTC(), onupdate=datetimeUTC()
+        TIMESTAMP(timezone=True), default=datetime_utc(), onupdate=datetime_utc()
     )
 
     def __repr__(self) -> str:

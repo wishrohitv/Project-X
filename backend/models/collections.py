@@ -2,10 +2,7 @@
 Alchemy model for collection, User create their own collection
 """
 
-from sqlalchemy.orm.collections import MappedCollection
-from sqlalchemy.sql.expression import null
-
-from backend.modules import (
+from modules import (
     TIMESTAMP,
     ForeignKey,
     List,
@@ -16,7 +13,7 @@ from backend.modules import (
     mapped_column,
     relationship,
 )
-from backend.utils import datetimeUTC
+from utils import datetime_utc
 
 from .base import Base
 
@@ -28,10 +25,10 @@ class Collections(Base):
     description: Mapped[str] = mapped_column(String(500), nullable=True)
     owner: Mapped[int] = mapped_column(ForeignKey("users.id"))
     createdAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=datetimeUTC()
+        TIMESTAMP(timezone=True), default=datetime_utc()
     )
     updatedAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), onupdate=datetimeUTC(), default=datetimeUTC()
+        TIMESTAMP(timezone=True), onupdate=datetime_utc(), default=datetime_utc()
     )
 
     def __repr__(self):

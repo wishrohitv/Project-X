@@ -1,4 +1,4 @@
-from backend.modules import DeclarativeBase
+from modules import DeclarativeBase
 
 
 class Base(DeclarativeBase):

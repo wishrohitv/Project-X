@@ -48,6 +48,9 @@ import jwt
 # Import requests
 import requests
 
+# Import all contents
+from constant import *
+
 # Import flask modules
 from flask import (
     Blueprint,
@@ -95,6 +98,3 @@ from sqlalchemy.orm import (
 # Werkzeug
 from werkzeug.exceptions import HTTPException
 from werkzeug.utils import secure_filename
-
-# Import all contents
-from backend.constant import *

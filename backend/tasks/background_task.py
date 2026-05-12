@@ -1,4 +1,4 @@
-from backend.modules import threading, queue, BACKGROUND_TASK_NUMBER_OF_THREADS
+from modules import BACKGROUND_TASK_NUMBER_OF_THREADS, queue, threading
 
 task_queue = queue.Queue()
 

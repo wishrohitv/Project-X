@@ -1,10 +1,9 @@
+from database import engine
 from flask.helpers import make_response
-
-from backend.database import engine
-from backend.models import Notifications
-from backend.models.enums import NotificationType
-from backend.modules import or_, sessionmaker
-from backend.utils import Log
+from models import Notifications
+from models.enums import NotificationType
+from modules import or_, sessionmaker
+from utils import Log
 
 Session = sessionmaker(bind=engine)
 session = Session()

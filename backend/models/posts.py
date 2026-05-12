@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     JSONB,
     TIMESTAMP,
     Enum,
@@ -11,7 +11,7 @@ from backend.modules import (
     mapped_column,
     relationship,
 )
-from backend.utils import datetimeUTC
+from utils import datetime_utc
 
 from .base import Base
 from .enums import AgeRating
@@ -51,12 +51,12 @@ class Posts(Base):
     isTemplate: Mapped[bool] = mapped_column(default=False, nullable=False)
     createdAt: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
-        default=datetimeUTC(),
+        default=datetime_utc(),
     )
     updatedAt: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
-        onupdate=datetimeUTC(),
-        default=datetimeUTC(),
+        onupdate=datetime_utc(),
+        default=datetime_utc(),
     )
 
     def __repr__(self) -> str:

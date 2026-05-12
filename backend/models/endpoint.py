@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     ARRAY,
     JSONB,
     TIMESTAMP,

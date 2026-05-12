@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     TIMESTAMP,
     ForeignKey,
     List,
@@ -9,7 +9,7 @@ from backend.modules import (
     mapped_column,
     relationship,
 )
-from backend.utils import datetimeUTC
+from utils import datetime_utc
 
 from .base import Base
 
@@ -20,7 +20,7 @@ class Likes(Base):
     postID: Mapped[int] = mapped_column(ForeignKey("posts.id"))
     userID: Mapped[int] = mapped_column(ForeignKey("users.id"))
     createdAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=datetimeUTC()
+        TIMESTAMP(timezone=True), default=datetime_utc()
     )
 
     def __repr__(self) -> str:

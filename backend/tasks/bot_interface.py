@@ -1,10 +1,10 @@
-from backend.database import redisClient
-from backend.models import Posts
-from backend.modules import APP_NAME
-from backend.services.botService import generateBotResponse
+from database import redis_client
+from models import Posts
+from modules import APP_NAME
+from services.bot_service import generate_bot_response
 
 
-def processUserRequests(
+def process_user_requests(
     parentPostID: int | None,
     currentPostID: int,
     userName: str,
@@ -22,4 +22,4 @@ def processUserRequests(
         "context": "user:@anme post:'This is the best movie i have ever seen, avenger is a best movie'",
         "task": "user:@john post:'Hi @nara can you explain about the post'",
     }
-    response = generateBotResponse(text)
+    response = generate_bot_response(text)

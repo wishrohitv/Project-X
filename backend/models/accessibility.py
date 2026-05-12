@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     ARRAY,
     BOOLEAN,
     INTEGER,
@@ -20,9 +20,14 @@ from .base import Base
 class Accessibility(Base):
     __tablename__ = "accessibility"
     id: Mapped[int] = mapped_column(primary_key=True)
-    endpointID: Mapped[str] = mapped_column(ForeignKey("endpoint.id"))
+    endpoint_id: Mapped[str] = mapped_column(ForeignKey("endpoint.id"))
     roles: Mapped[JSONB] = mapped_column(JSONB, default=[])  # LIST ITEM
-    partialAccess: Mapped[BOOLEAN] = mapped_column(BOOLEAN, default=False)
+    partial_access: Mapped[BOOLEAN] = mapped_column(BOOLEAN, default=False)
 
     def __repr__(self) -> str:
-        return f"Accessibility(id={self.id!r}, endpoint_id={self.endpointID!r}, roles={self.roles!r})"
+        return f"""
+            Accessibility(id={self.id!r},
+            endpoint_id={self.endpoint_id!r},
+            roles={self.roles!r})
+            partial_access={self.partial_access!r}
+            """

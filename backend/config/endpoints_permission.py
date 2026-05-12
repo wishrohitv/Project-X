@@ -11,39 +11,46 @@ class API_ENDPOINTS:
 
     # Auth
     auth_signup = RouteAccess(
+        # Signup user
         route_name="/auth/signup",
         methods=["POST"],
         role_permission=[],
     )
     auth_login = RouteAccess(
+        # Login user
         route_name="/auth/login",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
         partial_access=True,
     )
     auth_logout = RouteAccess(
+        # Logout user
         route_name="/auth/logout",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
     )
     auth_refresh = RouteAccess(
+        # Refresh token
         route_name="/auth/refresh",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
     )
     auth_generate_otp = RouteAccess(
-        route_name="/auth/generate-otp",
+        # Generate otp for verification
+        route_name="/auth/otp/generate",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
         partial_access=True,
     )
     auth_verify = RouteAccess(
-        route_name="/auth/verify",
+        # Verify otp
+        route_name="/auth/otp/verify",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
         partial_access=True,
     )
     auth_current_user = RouteAccess(
+        # Get current session user
         route_name="/auth/user",  # session user only
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["GET"],
@@ -51,18 +58,21 @@ class API_ENDPOINTS:
 
     # User route
     user_delete = RouteAccess(
+        # Delete user account
         route_name="/user",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["DELETE"],
     )
     user_suspend = RouteAccess(
-        route_name="/user/suspend",
+        # Suspend user account
+        route_name="/user/<int:user_id>/suspend",
         role_permission=[ROLE.MODERATOR, ROLE.SUPER_ADMIN],
         methods=["POST"],
     )
     user = RouteAccess(
+        # Get user profile
         route_name="/user/<string:username>",
-        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER, ROLE.GUEST],
         methods=["GET"],
         partial_access=True,
     )
@@ -72,55 +82,56 @@ class API_ENDPOINTS:
         methods=["PUT"],
     )
     user_change_profile = RouteAccess(
+        # Update profile image
         route_name="/user/profile_img",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["PUT"],
     )
     user_ban_user = RouteAccess(
         # Ban a user
-        route_name="/user/ban",
+        route_name="/user/<int:user_id>/ban",
         role_permission=[ROLE.SUPER_ADMIN],
         methods=["POST"],
     )
     user_unban_user = RouteAccess(
         # Unban a user
-        route_name="/user/ban",
+        route_name="/user/<int:user_id>/ban",
         role_permission=[ROLE.SUPER_ADMIN],
         methods=["PUT"],
     )
     user_add_follower = RouteAccess(
         # Follow a user
-        route_name="/user/follower",
+        route_name="/user/<int:user_id>/follower",
         role_permission=[ROLE.USER],
         methods=["POST"],
     )
     user_remove_follower = RouteAccess(
         # Unfollow a user
-        route_name="/user/follower",
+        route_name="/user/<int:user_id>/follower",
         role_permission=[ROLE.USER],
         methods=["DELETE"],
     )
     user_block = RouteAccess(
         # Block a user
-        route_name="/user/block",
+        route_name="/user/<int:user_id>/block",
         role_permission=[ROLE.USER],
         methods=["POST"],
     )
     user_unblock = RouteAccess(
         # Unblock a user
-        route_name="/user/block",
+        route_name="/user/<int:user_id>/block",
         role_permission=[ROLE.USER],
         methods=["DELETE"],
     )
-    user_report = RouteAccess(
+    user_report_users = RouteAccess(
         # Report a user
-        route_name="/user/report",
+        route_name="/user/<int:user_id>/report",
         role_permission=[ROLE.USER],
         methods=["POST"],
     )
     user_report_inspector = RouteAccess(
         # TODO: Inspect a reported user
-        route_name="/user/<int:reported_id>/report-inspector",
+        route_name="/user/<int:report_id>/report-inspector",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR],
         methods=["PUT"],
     )

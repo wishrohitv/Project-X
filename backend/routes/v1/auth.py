@@ -1,7 +1,7 @@
-from backend.config import API_ENDPOINTS, ROLE
-from backend.middlewares.verify_client_request import verifyRequestMiddleware
-from backend.models import AccountStatus
-from backend.modules import (
+from config import API_ENDPOINTS, ROLE
+from middlewares.verify_client_request import verify_request_middleware
+from models import AccountStatus
+from modules import (
     ACCESS_TOKEN_EXPIRY_MINUTES,
     HTTP_ONLY,
     REFRESH_TOKEN_EXPIRY_MINUTES,
@@ -11,7 +11,7 @@ from backend.modules import (
     make_response,
     request,
 )
-from backend.repository.userRespository import (
+from repository.userRespository import (
     _authenticateUser,
     _createUser,
     _generateOTPforUser,
@@ -19,7 +19,7 @@ from backend.repository.userRespository import (
     _refreshTokens,
     _verifyUser,
 )
-from backend.utils import LoggedUser
+from utils import LoggedUser
 
 authBlueprint = Blueprint("auth", __name__)
 """
@@ -89,7 +89,7 @@ def login():
 
 # "/auth/logout"
 @authBlueprint.route(route.logoutUser.routeName, methods=route.logoutUser.methods)
-@verifyRequestMiddleware(route.logoutUser.routeName)
+@verify_request_middleware(route.logoutUser.routeName)
 def logout(loggedUser: LoggedUser, *args, **kwargs):
     refreshToken = loggedUser.kwargs.get("refreshToken")
     if not refreshToken:

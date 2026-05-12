@@ -1,7 +1,7 @@
 from config import API_ENDPOINTS, ROLE
 from modules import functools, make_response, re, request
 from repository.checkUserRole import getUserRole
-from utils import LoggedUser, decodeJwtToken
+from utils import LoggedUser, decode_jwt_token
 
 apiEndpointsPartialAccess = API_ENDPOINTS().api_endpoints_partial_access
 

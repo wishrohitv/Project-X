@@ -1,4 +1,4 @@
-from backend.modules import PyEnum
+from modules import PyEnum
 
 
 # Post's age ratings

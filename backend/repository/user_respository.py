@@ -1,5 +1,5 @@
-from backend.database import engine, redisClient
-from backend.models import (
+from database import engine, redis_client
+from models import (
     AccountStatus,
     BlockedUsers,
     Follower,
@@ -8,7 +8,7 @@ from backend.models import (
     Sessions,
     Users,
 )
-from backend.modules import (
+from modules import (
     ACCESS_TOKEN_EXPIRY_MINUTES,
     API_ROOT_URL,
     HTTP_ONLY,
@@ -30,79 +30,87 @@ from backend.modules import (
     update,
     url_for,
 )
-from backend.services.mailService import sendOTP
-from backend.utils import (
+from services.mail_service import send_otp
+from utils import (
+    BadRequestError,
+    IndternalServerError,
     LoggedUser,
-    decodeJwtToken,
-    deleteMedia,
-    generateJwtToken,
-    getRandomOTP,
-    matchPassword,
-    returnHashedBytes,
+    ResourceNotFoundError,
+    SuccessResponse,
+    decode_jwt_token,
+    delete_media,
+    generate_jwt_token,
+    generate_otp,
+    match_password,
+    return_hashed_bytes,
 )
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def _createUser(
+def _signup_user(
     name: str,
-    userName: str,
+    username: str,
     email: str,
     password: str,
     role: int,
-    accountStatus: AccountStatus,
+    account_status: AccountStatus,
     country,
 ):
-    # Check if user already exist
-    user = (
-        session.query(Users)
-        .filter(or_(Users.userName == userName, Users.email == email))
-        .first()
-    )
-    if user:
-        return make_response(jsonify({"message": "User already exists"}), 400)
-    # Add a user
-    newUser = Users(
-        name=name,
-        userName=userName,
-        email=email,
-        password=returnHashedBytes(password.encode("ascii")),
-        role=role,
-        accountStatus=accountStatus,
-        profile=Profile(country=country),
-    )
-    session.add(newUser)
-    session.commit()
-    session.refresh(newUser)
-    # Close the session
-    session.close()
-    userObj = {
-        "id": newUser.id,
-        "name": newUser.name,
-        "userName": newUser.userName,
-        "email": newUser.email,
-        "joinDate": newUser.createdAt,
-        "role": newUser.role,
-        "accountStatus": newUser.accountStatus.value,
-    }
+    try:
+        # Check if user already exist
+        user = (
+            session.query(Users)
+            .filter(or_(Users.username == username, Users.email == email))
+            .first()
+        )
+        if user:
+            raise BadRequestError("User already exists")
+        # Add a user
+        new_user = Users(
+            name=name,
+            username=username,
+            email=email,
+            password=return_hashed_bytes(password.encode("ascii")),
+            role=role,
+            account_status=account_status,
+            profile=Profile(country=country),
+        )
+        session.add(new_user)
+        session.commit()
+        session.refresh(new_user)
+        # Close the session
+        session.close()
+        user_obj = {
+            "id": new_user.id,
+            "name": new_user.name,
+            "userName": new_user.username,
+            "email": new_user.email,
+            "join_date": new_user.created_at,
+            "role": new_user.role,
+            "accountStatus": new_user.account_status.value,
+        }
 
-    return make_response(
-        {"message": "User created successfully", "payload": userObj}, 201
-    )
+        return SuccessResponse(
+            data=user_obj, status_code=201, message="User created successfully"
+        )
+    except Exception as e:
+        session.rollback()
+        raise IndternalServerError(str(e))
 
 
-def _generateOTPforUser(userID: int):
+def _generate_otp_for_user(userID: int):
     # TODO: Implement rate limiting, and check email bounce
     try:
         user = session.query(Users).filter(Users.id == userID).first()
         if not user:
             return make_response({"error": "User not found"}, 404)
-        if user.isVerified:
+        if user.is_verified:
             return make_response({"message": "User already verified"}, 400)
-        otp = getRandomOTP()
-        redisClient.set(f"otp:{userID}", otp, ex=600)
-        sendOTP(user.email, str(otp))
+        otp = generate_otp()
+        redis_client.set(f"otp:{userID}", otp, ex=600)
+        send_otp(user.email, str(otp))
         session.close()
         return make_response({"message": "OTP generated successfully"}, 200)
 
@@ -111,22 +119,22 @@ def _generateOTPforUser(userID: int):
         return make_response({"error": "Internal server error"}, 500)
 
 
-def _verifyUser(userID: int, enteredOTP: str):
+def _verify_user(userID: int, entered_otp: str):
     # TODO: check user's verification state then allow for login
     try:
         user = session.query(Users).filter(Users.id == userID).first()
         if not user:
             return make_response({"error": "User not found"}, 404)
-        if user.isVerified:
+        if user.is_verified:
             return make_response({"message": "User already verified"}, 400)
 
-        storedOTP = redisClient.get(f"otp:{userID}")
-        if not storedOTP:
+        stored_otp = redis_client.get(f"otp:{userID}")
+        if not stored_otp:
             return make_response({"error": "OTP expired"}, 400)
-        if storedOTP != enteredOTP:
+        if stored_otp != entered_otp:
             return make_response({"error": "Invalid OTP"}, 400)
 
-        user.isVerified = True
+        user.is_verified = True
         session.commit()
         session.refresh(user)
         session.close()
@@ -136,7 +144,7 @@ def _verifyUser(userID: int, enteredOTP: str):
         return make_response({"error": "Internal server error"}, 500)
 
 
-def _authenticateUser(userName, email, password):
+def _login_user(username, email, password):
     """
     Check user's account status ["active", "suspended", "banned", "deleted"]
     """
@@ -144,43 +152,43 @@ def _authenticateUser(userName, email, password):
         # Query the user
         users = (
             session.query(Users)
-            .where(or_(Users.email == email, Users.userName == userName))
+            .where(or_(Users.email == email, Users.username == username))
             .first()
         )
         session.close()
         if not users:
             return make_response({"message": "user does not exist"}, 404)
-        if users.accountStatus == AccountStatus.suspended:
+        if users.account_status == AccountStatus.suspended:
             return make_response({"message": "user is suspended"}, 403)
-        if users.accountStatus == AccountStatus.banned:
+        if users.account_status == AccountStatus.banned:
             return make_response({"message": "user is banned"}, 403)
-        if users.accountStatus == AccountStatus.deleted:
+        if users.account_status == AccountStatus.deleted:
             return make_response({"message": "user is deleted"}, 403)
-        if not matchPassword(password.encode("ascii"), users.password):
+        if not match_password(password.encode("ascii"), users.password):
             return make_response({"error": "Invalid password"}, 401)
-        accessObj = {
+        access_obj = {
             "id": users.id,
             "name": users.name,
-            "userName": users.userName,
+            "username": users.username,
             "email": users.email,
-            "joinDate": users.createdAt.strftime("%Y-%m-%d %H:%M:%S"),
+            "join_date": users.created_at.strftime("%Y-%m-%d %H:%M:%S"),
             "role": users.role,
-            "accountStatus": users.accountStatus.value,
+            "account_status": users.account_status.value,
         }
-        refreshObj = {
+        refresh_obj = {
             "id": users.id,
             "name": users.name,
-            "userName": users.userName,
+            "username": users.username,
         }
 
-        accessToken = generateJwtToken(
-            userData=accessObj, expireInMinute=ACCESS_TOKEN_EXPIRY_MINUTES
+        access_token = generate_jwt_token(
+            user_data=access_obj, expire_in_minute=ACCESS_TOKEN_EXPIRY_MINUTES
         )
-        refreshToken = generateJwtToken(
-            userData=refreshObj, expireInMinute=REFRESH_TOKEN_EXPIRY_MINUTES
+        refresh_token = generate_jwt_token(
+            user_data=refresh_obj, expire_in_minute=REFRESH_TOKEN_EXPIRY_MINUTES
         )
 
-        stmt = Sessions(userID=users.id, refreshToken=refreshToken)
+        stmt = Sessions(userID=users.id, refreshToken=refresh_token)
         session.add(stmt)
         session.commit()
         # Close the session
@@ -189,20 +197,20 @@ def _authenticateUser(userName, email, password):
         res = make_response(
             {
                 "message": "Logged in successfully",
-                "payload": {"userID": users.id, "userName": users.userName},
+                "data": {"user_id": users.id, "username": users.username},
             },
             200,
         )
         res.set_cookie(
-            key="accessToken",
-            value=accessToken,
+            key="access_token",
+            value=access_token,
             httponly=HTTP_ONLY,
             secure=SECURE_COOKIE,
             max_age=ACCESS_TOKEN_EXPIRY_MINUTES * 60,
         )
         res.set_cookie(
-            key="refreshToken",
-            value=refreshToken,
+            key="refresh_token",
+            value=refresh_token,
             httponly=HTTP_ONLY,
             secure=SECURE_COOKIE,
             samesite=None,
@@ -211,33 +219,34 @@ def _authenticateUser(userName, email, password):
         return res
 
     except Exception as e:
+        session.rollback()
         print(e)
         raise Exception(e)
 
 
-def _refreshTokens(refreshToken: str):
+def _refresh_tokens(refresh_token: str):
     try:
-        decodedData = decodeJwtToken(refreshToken)
-        if not decodedData:
+        decoded_data = decode_jwt_token(refresh_token)
+        if not decoded_data:
             raise Exception("Token expired")
-        userID = decodedData["payload"]["id"]
+        user_id = decoded_data["data"]["id"]
         # TODO: check account status too
         # if accountStatus == "active":
         #     pass
         stmt = (
-            select(Users, Sessions.refreshToken)
+            select(Users, Sessions.refresh_token)
             .join_from(Users, Sessions)
-            .where(Sessions.refreshToken == refreshToken)
+            .where(Sessions.refresh_token == refresh_token)
         )
         userResult = session.execute(stmt).first()
         session.close()
-        if not userResult or refreshToken != userResult[1]:
+        if not userResult or refresh_token != userResult[1]:
             return make_response({"error": "Invalid refresh token"}, 401)
         # Delete previous refresh token of user
         stmt = (
             update(Sessions)
-            .where(Sessions.refreshToken == refreshToken)
-            .values(refreshToken="")
+            .where(Sessions.refresh_token == refresh_token)
+            .values(refresh_token="")
         )
         session.execute(stmt)
         session.commit()
@@ -245,28 +254,28 @@ def _refreshTokens(refreshToken: str):
 
         user: Users = userResult[0]
 
-        newAccessToken = generateJwtToken(
-            userData={
+        new_access_token = generate_jwt_token(
+            user_data={
                 "id": user.id,
                 "name": user.name,
+                "username": user.username,
                 "email": user.email,
+                "join_date": user.created_at.strftime("%Y-%m-%d %H:%M:%S"),
                 "role": user.role,
-                "userName": user.userName,
-                "joinDate": user.createdAt.strftime("%Y-%m-%d %H:%M:%S"),
-                "accountStatus": user.accountStatus.value,
+                "account_status": user.account_status.value,
             },
-            expireInMinute=ACCESS_TOKEN_EXPIRY_MINUTES,
+            expire_in_minute=ACCESS_TOKEN_EXPIRY_MINUTES,
         )
-        newRefreshToken = generateJwtToken(
-            userData={
+        new_refresh_token = generate_jwt_token(
+            user_data={
                 "id": user.id,
                 "name": user.name,
-                "userName": user.userName,
+                "username": user.username,
             },
-            expireInMinute=REFRESH_TOKEN_EXPIRY_MINUTES,
+            expire_in_minute=REFRESH_TOKEN_EXPIRY_MINUTES,
         )
         session.close()
-        stmt = Sessions(userID=user.id, refreshToken=newRefreshToken)
+        stmt = Sessions(user_id=user.id, refresh_token=new_refresh_token)
         session.add(stmt)
         session.commit()
         session.close()
@@ -274,20 +283,20 @@ def _refreshTokens(refreshToken: str):
         res = make_response(
             {
                 "message": "Token refreshed successfully",
-                "payload": {"userID": user.id, "userName": user.userName},
+                "data": {"user_id": user.id, "username": user.username},
             },
             200,
         )
         res.set_cookie(
-            key="accessToken",
-            value=newAccessToken,
+            key="access_token",
+            value=new_access_token,
             httponly=HTTP_ONLY,
             secure=SECURE_COOKIE,
             max_age=ACCESS_TOKEN_EXPIRY_MINUTES * 60,
         )
         res.set_cookie(
-            key="refreshToken",
-            value=newRefreshToken,
+            key="refresh_token",
+            value=new_refresh_token,
             httponly=HTTP_ONLY,
             secure=SECURE_COOKIE,
             samesite=None,
@@ -295,27 +304,30 @@ def _refreshTokens(refreshToken: str):
         )
         return res
     except Exception as e:
+        session.rollback()
         print(e)
         raise Exception(e)
 
 
-def _logout(refreshToken: str, userID: int, allDevices=False):
+def _logout(refresh_token: str, user_id: int, all_devices=False):
     try:
         user = None
-        if allDevices:
-            user = session.query(Sessions).filter_by(userID=userID).first()
+        if all_devices:
+            user = session.query(Sessions).filter_by(user_id=user_id).first()
         else:
-            user = session.query(Sessions).filter_by(refreshToken=refreshToken).first()
+            user = (
+                session.query(Sessions).filter_by(refresh_token=refresh_token).first()
+            )
 
         if not user:
             raise Exception("User session not found")
-        if allDevices:
-            stmt = delete(Sessions).where(Sessions.userID == userID)
+        if all_devices:
+            stmt = delete(Sessions).where(Sessions.user_id == user_id)
             session.execute(stmt)
             session.commit()
             session.close()
         else:
-            stmt = delete(Sessions).filter_by(refreshToken=refreshToken)
+            stmt = delete(Sessions).filter_by(refresh_token=refresh_token)
             session.execute(stmt)
             session.commit()
             session.close()
@@ -323,11 +335,11 @@ def _logout(refreshToken: str, userID: int, allDevices=False):
         raise Exception(e)
 
 
-def _addFollower(sessionUserID: int, userID: int):
+def _addFollower(session_user_id: int, user_id: int):
     try:
         checkIsAlreadyFollow = select(
             exists().where(
-                Follower.userID == userID, Follower.followerID == sessionUserID
+                Follower.user_id == user_id, Follower.follower_id == sessionUserID
             )
         )
         isAlreadyFollows = session.scalar(
@@ -336,7 +348,7 @@ def _addFollower(sessionUserID: int, userID: int):
         session.close()
         # If isAlreadyFollows
         if not isAlreadyFollows:
-            newFollower = Follower(userID=userID, followerID=sessionUserID)
+            newFollower = Follower(userID=userID, follower_id=sessionUserID)
             session.add(newFollower)
             session.commit()
             session.close()
@@ -364,13 +376,13 @@ def _removeFollower(
         if userRemoveFollower:
             checkIsAlreadyFollow = select(
                 exists().where(
-                    Follower.userID == sessionUserID, Follower.followerID == userID
+                    Follower.userID == sessionUserID, Follower.follower_id == userID
                 )
             )
         else:
             checkIsAlreadyFollow = select(
                 exists().where(
-                    Follower.userID == userID, Follower.followerID == sessionUserID
+                    Follower.userID == userID, Follower.follower_id == sessionUserID
                 )
             )
 
@@ -385,11 +397,11 @@ def _removeFollower(
 
         if userRemoveFollower:
             stmt = delete(Follower).where(
-                Follower.userID == sessionUserID, Follower.followerID == userID
+                Follower.userID == sessionUserID, Follower.follower_id == userID
             )
         else:
             stmt = delete(Follower).where(
-                Follower.userID == userID, Follower.followerID == sessionUserID
+                Follower.userID == userID, Follower.follower_id == sessionUserID
             )
         session.execute(stmt)
         session.commit()
@@ -401,21 +413,21 @@ def _removeFollower(
         return make_response({"error": f"{e}"}, 500)
 
 
-def getUserProfile(
-    _userName: str | None = None,
+def _getUserProfile(
+    _username: str | None = None,
     _email: str | None = None,
-    _userID: int | None = None,
-    sessionUserID: int | None = None,
+    _user_id: int | None = None,
+    session_user_id: int | None = None,
 ):
     """
-    Retrieve a user profile based on the input parameters: userName, email, or uid. Only
+    Retrieve a user profile based on the input parameters: username, email, or uid. Only
     one field should be provided to successfully query a user. If no valid argument
     is passed, an error response is returned. The function queries the database, closes
     the session afterward, and fetches details of the user(s). If a user exists, their
     profile details are returned in the response payload; otherwise, an error message
     is provided.
 
-    :param _userName: Username of the user to be queried
+    :param _username: Username of the user to be queried
     :param _email: Email address of the user to be queried
     :param _userID: Unique identifier of the user to be queried
     :return: JSON response containing the user's data if the user exists or an error
@@ -424,18 +436,18 @@ def getUserProfile(
 
     try:
         # User's follower count
-        followerCount = aliased(Follower)
+        follower_count = aliased(Follower)
         # User's following count
-        followingCount = aliased(Follower)
+        following_count = aliased(Follower)
 
-        matchBy = {}
-        if _userID:
-            matchBy["id"] = _userID
-        elif _userName:
-            matchBy["userName"] = _userName
+        match_by = {}
+        if _user_id:
+            match_by["id"] = _user_id
+        elif _username:
+            match_by["username"] = _username
         elif _email:
-            matchBy["email"] = _email
-        if len(matchBy) == 0:
+            match_by["email"] = _email
+        if len(match_by) == 0:
             raise ValueError("No match criteria provided")
         # Query the user
         stmt = (
@@ -443,57 +455,58 @@ def getUserProfile(
                 Users,
                 Profile.bio,
                 Profile.country,
-                Profile.mediaUrl,
-                Profile.mediaPublicID,
-                Profile.fileExtension,
-                func.count(followerCount.userID).label("followerCount"),
-                func.count(followingCount.followerID).label("followingCount"),
+                Profile.media_url,
+                Profile.media_public_id,
+                Profile.file_extension,
+                func.count(follower_count.user_id).label("follower_count"),
+                func.count(following_count.follower_id).label("following_count"),
                 exists(
-                    select(Follower).where(Follower.followerID == sessionUserID)
+                    select(Follower).where(Follower.follower_id == session_user_id)
                 ).label(
-                    "isFollowing"  # Whether session user follows or not
+                    "is_following"  # Whether session user follows or not
                 ),
             )
             .select_from(Users)
-            .filter_by(**matchBy)  # Apply matches to User only while in context
-            .outerjoin(followerCount, followerCount.userID == Users.id)
-            .outerjoin(followingCount, followingCount.followerID == Users.id)
-            .outerjoin(Profile, Profile.userID == Users.id)
+            .filter_by(**match_by)  # Apply matches to User only while in context
+            .outerjoin(follower_count, follower_count.user_id == Users.id)
+            .outerjoin(following_count, following_count.follower_id == Users.id)
+            .outerjoin(Profile, Profile.user_id == Users.id)
             .group_by(Users.id, Profile.id)
         )
         users = session.execute(stmt).all()
         # Close the session
         session.close()
         if users:
-            usersDict = []
-            for user in users:
-                userObj = {
+            usersDict = [
+                {
                     "id": user[0].id,
                     "name": user[0].name,
-                    "userName": user[0].userName,
-                    "email": user[0].email if sessionUserID == user[0].id else "",
-                    "joinDate": user[0].createdAt.strftime("%Y-%m-%d %H:%M:%S"),
+                    "username": user[0].userName,
+                    "email": user[0].email if session_user_id == user[0].id else "",
+                    "join_date": user[0].createdAt.strftime("%Y-%m-%d %H:%M:%S"),
                     "role": user[0].role,
-                    "accountStatus": user[0].accountStatus.value,
+                    "account_status": user[0].accountStatus.value,
                     "bio": user[1],
                     "country": user[2],
-                    "profileImgUrl": user[3]
+                    "profile_img_url": user[3]
                     if USE_CLOUDINARY_STORAGE
                     else f"{API_ROOT_URL}{url_for('profileImage.serveImage', fileName=f'{user[4]}.{user[5]}')}",
-                    "followerCount": user[6],
-                    "followingCount": user[7],
-                    "isFollowing": user[8],
+                    "follower_count": user[6],
+                    "following_count": user[7],
+                    "is_following": user[8],
                 }
-                usersDict.append(userObj)
-            return make_response({"payload": usersDict[0]}, 200)
+                for user in users
+            ]
+            return SuccessResponse(
+                data=usersDict[0], message="Fetched user detail successfully"
+            )
         else:
-            return make_response({"error": "user does not exist"}, 404)
+            raise ResourceNotFoundError("User does not exist")
     except Exception as e:
-        print(e)
-        return make_response({"error": f"{e}"}, 500)
+        raise IndternalServerError("Error while fetching user profile " + str(e))
 
 
-def updateProfileImg(
+def _updateProfileImg(
     sessionUserID: int,
     mediaPublicID: str,
     fileExtension: str,
@@ -539,7 +552,7 @@ def updateProfileImg(
         return make_response({"error": f"{e}"}, 500)
 
 
-def updateUser(
+def _updateUser(
     sessionUserID: int,
     name: str | None,
     bio: str | None,

@@ -1,20 +1,29 @@
-from  backend.modules import (
+from modules import (
+    TIMESTAMP,
+    ForeignKey,
+    List,
     Mapped,
-    mapped_column,
     Optional,
     String,
-    List,
-    TIMESTAMP,
+    datetime,
+    mapped_column,
     relationship,
-    ForeignKey,
 )
+from utils import datetime_utc
 
 from .base import Base
 
+
 class Category(Base):
     __tablename__ = "category"
-    id : Mapped[int] = mapped_column(primary_key=True)
-    category : Mapped[str] = mapped_column(String(50))
+    id: Mapped[int] = mapped_column(primary_key=True)
+    category: Mapped[str] = mapped_column(String(50))
+    # createdAt: Mapped[datetime] = mapped_column(
+    #     TIMESTAMP(timezone=True), default=datetime_utc()
+    # )
+    # updatedAt: Mapped[datetime] = mapped_column(
+    #     TIMESTAMP(timezone=True), onupdate=datetime_utc(), default=datetime_utc()
+    # )
 
     def __repr__(self) -> str:
         return f"""Category(id={self.id!r}, category={self.category})"""

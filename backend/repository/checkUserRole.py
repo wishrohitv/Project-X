@@ -1,9 +1,9 @@
-from backend.models import Accessibility, Endpoint
-from backend.modules import json, select, sessionmaker
+from models import Accessibility, Endpoint
+from modules import json, select, sessionmaker
 
 
 def getUserRole(endpoint: str, userRole: int | None = None) -> bool:
-    from backend.database import engine
+    from database import engine
 
     Session = sessionmaker(bind=engine)
     session = Session()

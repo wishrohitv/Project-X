@@ -12,51 +12,53 @@ from modules import (
     secure_filename,
     uuid,
 )
-from repository.userRespository import (
+from repository.user_respository import (
     _addFollower,
     _blockUser,
+    _getUserProfile,
     _removeFollower,
     _reportUser,
     _unblockUser,
-    getUserProfile,
-    updateProfileImg,
-    updateUser,
+    _updateProfileImg,
+    _updateUser,
 )
-from utils import LoggedUser, upload_media
+from utils import LoggedUser, SuccessResponse, upload_media
 
-usersBlueprint = Blueprint("users", __name__)
+users_blueprint = Blueprint("users", __name__)
 
 route = API_ENDPOINTS()
 
 
-# /user/<string:userName>
-@usersBlueprint.route(f"{route.user.route_name}", methods=route.user.methods)
+# /user/<string:username>
+@users_blueprint.route(f"{route.user.route_name}", methods=route.user.methods)
 @verify_request_middleware(route.user.route_name)
-def usersGetInfo(loggedUser: LoggedUser | None = None, *args, **kwargs):
-    userName: str | None = kwargs.get("userName") or request.args.get("userName")
-    userID = request.args.get("userID")
-    userEmail: str | None = request.args.get("emailID")
-    if not (userName or userID or userEmail):
-        return make_response({"error": "Expect any value of userName, userID, emailID"})
+def user_get_profile_detail(loggedUser: LoggedUser | None = None, *args, **kwargs):
+    username: str | None = kwargs.get("username") or request.args.get("username")
+    user_id = request.args.get("user_id")
+    user_email: str | None = request.args.get("email_id")
+    if not (username or user_id or user_email):
+        return make_response(
+            {"error": "Expect any value of username, user_iD, email_iD"}
+        )
 
-    if userID:
-        if not isinstance(userID, int):
-            return make_response({"error": f"Invalid id {userID} datatype"}, 400)
+    if user_id:
+        if not isinstance(user_id, int):
+            return make_response({"error": f"Invalid id {user_id} datatype"}, 400)
 
     try:
-        return getUserProfile(
-            _userID=userID,
-            _userName=userName,
-            _email=userEmail,
-            sessionUserID=loggedUser.userID if loggedUser else None,
+        return _getUserProfile(
+            _user_id=user_id,
+            _username=username,
+            _email=user_email,
+            session_user_id=loggedUser.user_id if loggedUser else None,
         )
     except Exception as e:
         return make_response({"error": str(e)}, 500)
 
 
 # /user/update
-@usersBlueprint.route(route.userUpdate.routeName, methods=route.userUpdate.methods)
-@verify_request_middleware(route.userUpdate.routeName)
+@users_blueprint.route(route.user_update.route_name, methods=route.user_update.methods)
+@verify_request_middleware(route.user_update.route_name)
 def usersUpdateInfo(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     try:
@@ -69,7 +71,7 @@ def usersUpdateInfo(loggedUser: LoggedUser, *args, **kwargs):
         country = body.get("country")
         age = body.get("age")
 
-        return updateUser(
+        return _updateUser(
             sessionUserID=sessionUserID, name=name, bio=bio, country=country, age=age
         )
     except Exception as e:
@@ -77,11 +79,11 @@ def usersUpdateInfo(loggedUser: LoggedUser, *args, **kwargs):
 
 
 # /user/profileImg/update
-@usersBlueprint.route(
-    route.userChangeProfile.routeName, methods=route.userChangeProfile.methods
+@users_blueprint.route(
+    route.user_change_profile.route_name, methods=route.user_change_profile.methods
 )
-@verify_request_middleware(route.userChangeProfile.routeName)
-def usersUpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
+@verify_request_middleware(route.user_change_profile.route_name)
+def users_UpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
     try:
         profileMediaUid = str(uuid.uuid4())
         sessionUserID = loggedUser.userID
@@ -116,7 +118,7 @@ def usersUpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
                 )
             )
             _mediaPublicID = profileMediaUid
-        return updateProfileImg(
+        return _updateProfileImg(
             sessionUserID=sessionUserID,
             mediaPublicID=_mediaPublicID,
             fileExtension=fileExtension,
@@ -127,19 +129,19 @@ def usersUpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
 
 
 # /user/delete
-@usersBlueprint.route(route.deleteUser.routeName, methods=route.deleteUser.methods)
-@verify_request_middleware(route.deleteUser.routeName)
+@users_blueprint.route(route.user_delete.route_name, methods=route.user_delete.methods)
+@verify_request_middleware(route.user_delete.route_name)
 def usersDelete():
     raise NotImplementedError()
 
 
-# /user/unfollow
-@usersBlueprint.route(
-    route.userRemoveFollower.routeName, methods=route.userRemoveFollower.methods
+# /user/follower
+@users_blueprint.route(
+    route.user_remove_follower.route_name, methods=route.user_remove_follower.methods
 )
-@verify_request_middleware(route.userRemoveFollower.routeName)
+@verify_request_middleware(route.user_remove_follower.route_name)
 def removeFollower(loggedUser: LoggedUser, *args, **kwargs):
-    sessionUserID = loggedUser.userID
+    sessionUserID = loggedUser.user_id
     body = request.get_json()
     if isinstance(body, dict):
         targetUserID = body.get("userID")
@@ -154,11 +156,11 @@ def removeFollower(loggedUser: LoggedUser, *args, **kwargs):
         return make_response({"error": "Expect json body"}, 401)
 
 
-# /user/follow
-@usersBlueprint.route(
-    route.userAddFollower.routeName, methods=route.userAddFollower.methods
+# /user/follower
+@users_blueprint.route(
+    route.user_add_follower.route_name, methods=route.user_add_follower.methods
 )
-@verify_request_middleware(route.userAddFollower.routeName)
+@verify_request_middleware(route.user_add_follower.route_name)
 def addFollower(loggedUser: LoggedUser, *agrs, **kwargs):
     sessionUserID = loggedUser.userID
     body = request.get_json()
@@ -175,10 +177,10 @@ def addFollower(loggedUser: LoggedUser, *agrs, **kwargs):
         return make_response({"error": "Expect json body"}, 401)
 
 
-@usersBlueprint.route(
-    f"{route.userBlock.routeName}/<int:userID>", methods=route.userBlock.methods
+@users_blueprint.route(
+    f"{route.user_block.route_name}/<int:userID>", methods=route.user_block.methods
 )
-@verify_request_middleware(route.userBlock.routeName)
+@verify_request_middleware(route.user_block.route_name)
 def blockUser(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     userID = kwargs.get("userID")
@@ -187,10 +189,10 @@ def blockUser(loggedUser: LoggedUser, *args, **kwargs):
     return _blockUser(sessionUserID, userID)
 
 
-@usersBlueprint.route(
-    f"{route.userUnblock.routeName}/<int:userID>", methods=route.userUnblock.methods
+@users_blueprint.route(
+    f"{route.user_unblock.route_name}/<int:userID>", methods=route.user_unblock.methods
 )
-@verify_request_middleware(route.userUnblock.routeName)
+@verify_request_middleware(route.user_unblock.route_name)
 def unblockUser(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     userID = kwargs.get("userID")
@@ -199,10 +201,11 @@ def unblockUser(loggedUser: LoggedUser, *args, **kwargs):
     return _unblockUser(sessionUserID, userID)
 
 
-@usersBlueprint.route(
-    f"{route.userReport.routeName}/<int:userID>", methods=route.userReport.methods
+@users_blueprint.route(
+    f"{route.user_report_users.route_name}/<int:userID>",
+    methods=route.user_report_users.methods,
 )
-@verify_request_middleware(route.userReport.routeName)
+@verify_request_middleware(route.user_report_users.route_name)
 def reportUser(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     userID = kwargs.get("userID")

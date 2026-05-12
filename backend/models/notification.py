@@ -1,4 +1,4 @@
-from backend.modules import (
+from modules import (
     JSON,
     TIMESTAMP,
     Enum,
@@ -11,7 +11,7 @@ from backend.modules import (
     mapped_column,
     relationship,
 )
-from backend.utils import datetimeUTC
+from utils import datetime_utc
 
 from .base import Base
 from .enums import NotificationType
@@ -28,9 +28,9 @@ class Notifications(Base):
         quote=True,
     )
     notice: Mapped[JSON] = mapped_column(JSON, nullable=False)
-    createdAt: Mapped[datetime] = mapped_column(TIMESTAMP, default=datetimeUTC)
+    createdAt: Mapped[datetime] = mapped_column(TIMESTAMP, default=datetime_utc)
     updatedAt: Mapped[datetime] = mapped_column(
-        TIMESTAMP, default=datetimeUTC, onupdate=datetimeUTC
+        TIMESTAMP, default=datetime_utc, onupdate=datetime_utc
     )
     readAt: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP, nullable=True)
     deletedAt: Mapped[Optional[datetime]] = mapped_column(TIMESTAMP, nullable=True)

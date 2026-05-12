@@ -16,28 +16,29 @@ class RepoError(Exception):
 
 
 class AppError(HTTPException):
-    def __init__(self, code=500, error="AppError", description="Something went wrong"):
-        super().__init__(description=description)
+    def __init__(self, code=500, error="AppError", message="Something went wrong"):
+        super().__init__(description=message)
         self.code = code
         self.error = error
-        self.description = description
+        self.message = message
 
 
 class IndternalServerError(AppError):
     def __init__(
         self,
-        code=500,
-        error="IndternalServerError",
-        description="Token has expired",
+        message="Internal sever error",
     ):
-        super().__init__(code=code, error=error, description=description)
+        super().__init__(code=500, error="IndternalServerError", message=message)
 
 
 class ResourceNotFoundError(AppError):
-    def __init__(
-        self, code=404, error="ResourceNotFoundError", description="Resource not found"
-    ):
-        super().__init__(code=code, error=error, description=description)
+    def __init__(self, message="Resource not found"):
+        super().__init__(code=404, error="ResourceNotFoundError", message=message)
+
+
+class BadRequestError(AppError):
+    def __init__(self, error="Bad request"):
+        super().__init__(code=400, error="BaddRequestError", message=error)
 
 
 class InvalidCredentialsError(AppError):
@@ -45,9 +46,9 @@ class InvalidCredentialsError(AppError):
         self,
         code=401,
         error="InvalidCredentialsError",
-        description="Invalid credentials",
+        message="Invalid credentials",
     ):
-        super().__init__(code=code, error=error, description=description)
+        super().__init__(code=code, error=error, message=message)
 
 
 class TokenExpiredError(AppError):
@@ -55,9 +56,9 @@ class TokenExpiredError(AppError):
         self,
         code=401,
         error="TokenExpiredError",
-        description="Token has expired",
+        message="Token has expired",
     ):
-        super().__init__(code=code, error=error, description=description)
+        super().__init__(code=code, error=error, message=message)
 
 
 class RateLimitExceededError(AppError):
@@ -65,9 +66,9 @@ class RateLimitExceededError(AppError):
         self,
         code=429,
         error="RateLimitExceededError",
-        description="Rate limit exceeded",
+        message="Rate limit exceeded",
     ):
-        super().__init__(code=code, error=error, description=description)
+        super().__init__(code=code, error=error, message=message)
 
 
 class ConflictError(AppError):
@@ -75,6 +76,6 @@ class ConflictError(AppError):
         self,
         code=409,
         error="ConflictError",
-        description="Conflict",
+        message="Conflict",
     ):
-        super().__init__(code=code, error=error, description=description)
+        super().__init__(code=code, error=error, message=message)
