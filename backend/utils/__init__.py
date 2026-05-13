@@ -10,4 +10,4 @@ from .logger import Log, Logging
 from .rate_limiter import RateLimiter
 from .route_access import RouteAccess
 from .success_response import SuccessResponse
-from .validation import get_user_names
+from .validation import get_usernames

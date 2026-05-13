@@ -1,10 +1,10 @@
-from backend.config import API_ENDPOINTS
-from backend.middlewares.verify_client_request import verifyRequestMiddleware
-from backend.modules import Blueprint, make_response, request
-from backend.repository.notificationRepository import _getNotifications
-from backend.utils import Log, LoggedUser
-from backend.utils.app_errors import AppError, RateLimitExceededError
-from backend.utils.logger import Logging
+from config import API_ENDPOINTS
+from middlewares.verify_client_request import verify_request_middleware
+from modules import Blueprint, make_response, request
+from repository.notificationRepository import _getNotifications
+from utils import Log, LoggedUser
+from utils.app_errors import RateLimitExceededError
+from utils.logger import Logging
 
 notificationBlueprint = Blueprint("notifications", __name__)
 
@@ -13,12 +13,12 @@ logger = Logging(__name__)
 
 
 @notificationBlueprint.route(
-    f"{route.getNotifications.routeName}", methods=route.getNotifications.methods
+    f"{route.get_notifications.route_name}", methods=route.get_notifications.methods
 )
-@verifyRequestMiddleware(route.getNotifications.routeName)
-def getNotifications(loggedUser: LoggedUser, *args, **kwargs):
+@verify_request_middleware(route.get_notifications.route_name)
+def get_notifications(logged_user: LoggedUser, *args, **kwargs):
     try:
-        sessionUserID = loggedUser.userID
+        sessionUserID = logged_user.user_id
         mention = str(request.args.get("mention", default=False)).lower() == "true"
         notice = _getNotifications(sessionUserID, mention)
         return notice
@@ -28,10 +28,10 @@ def getNotifications(loggedUser: LoggedUser, *args, **kwargs):
 
 
 @notificationBlueprint.route(
-    route.trackNotifications.routeName, methods=route.trackNotifications.methods
+    route.track_notifications.route_name, methods=route.track_notifications.methods
 )
-@verifyRequestMiddleware(route.trackNotifications.routeName)
-def trackNotificationClick():
+@verify_request_middleware(route.track_notifications.route_name)
+def track_notification_click():
     # TODO: complete the logic
     logger.error("not fuond")
-    raise RateLimitExceededError(description="Bad request")
+    raise RateLimitExceededError("Bad request")

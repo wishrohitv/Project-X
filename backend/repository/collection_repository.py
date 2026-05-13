@@ -1,7 +1,7 @@
-from backend.database import engine
-from backend.models import CollectionData, Collections
-from backend.modules import datetime, delete, or_, sessionmaker, update
-from backend.utils import RepoError
+from database import engine
+from models import CollectionData, Collections
+from modules import datetime, delete, or_, sessionmaker, update
+from utils import RepoError
 
 Session = sessionmaker(bind=engine)
 session = Session()

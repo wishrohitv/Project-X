@@ -11,7 +11,7 @@ from modules import (
     make_response,
     request,
 )
-from repository.userRespository import (
+from repository.user_respository import (
     _authenticateUser,
     _createUser,
     _generateOTPforUser,
@@ -21,10 +21,10 @@ from repository.userRespository import (
 )
 from utils import LoggedUser
 
-authBlueprint = Blueprint("auth", __name__)
+auth_blueprint = Blueprint("auth", __name__)
 """
 url_prefix causing confilct
-authBlueprint = Blueprint(
+auth_blueprint = Blueprint(
     "auth",
     __name__,
     url_prefix = 'auth'
@@ -35,7 +35,7 @@ route = API_ENDPOINTS()
 
 
 # auth/signup
-@authBlueprint.route(route.signupUser.routeName, methods=route.signupUser.methods)
+@auth_blueprint.route(route.signupUser.routeName, methods=route.signupUser.methods)
 def signup():
     clientBody = request.get_json()
     if isinstance(clientBody, dict):
@@ -67,7 +67,7 @@ def signup():
 
 
 # /auth/login
-@authBlueprint.route(route.loginUser.routeName, methods=route.loginUser.methods)
+@auth_blueprint.route(route.loginUser.routeName, methods=route.loginUser.methods)
 def login():
     try:
         clientBody = request.get_json()
@@ -88,7 +88,7 @@ def login():
 
 
 # "/auth/logout"
-@authBlueprint.route(route.logoutUser.routeName, methods=route.logoutUser.methods)
+@auth_blueprint.route(route.logoutUser.routeName, methods=route.logoutUser.methods)
 @verify_request_middleware(route.logoutUser.routeName)
 def logout(loggedUser: LoggedUser, *args, **kwargs):
     refreshToken = loggedUser.kwargs.get("refreshToken")
@@ -109,7 +109,7 @@ def logout(loggedUser: LoggedUser, *args, **kwargs):
 
 
 # /auth/refresh
-@authBlueprint.route(route.refreshToken.routeName, methods=route.refreshToken.methods)
+@auth_blueprint.route(route.refreshToken.routeName, methods=route.refreshToken.methods)
 def refreshToken():
     # for web
     refreshToken = request.cookies.get("refreshToken") or request.headers.get(
@@ -125,14 +125,14 @@ def refreshToken():
         return make_response({"error": str(e)}, 401)
 
 
-@authBlueprint.route(
+@auth_blueprint.route(
     f"{route.genrateOtp.routeName}/<int:userID>", methods=route.genrateOtp.methods
 )
 def generateOTP(userID):
     return _generateOTPforUser(userID)
 
 
-@authBlueprint.route(
+@auth_blueprint.route(
     f"{route.verifyUser.routeName}/<int:userID>/<string:otp>",
     methods=route.verifyUser.methods,
 )

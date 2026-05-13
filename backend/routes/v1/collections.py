@@ -1,33 +1,33 @@
-from flask.globals import request
-
-from backend.config import API_ENDPOINTS
-from backend.middlewares.verify_client_request import verifyRequestMiddleware
-from backend.modules import Blueprint, make_response
-from backend.repository.collectionRepository import (
+from config import API_ENDPOINTS
+from middlewares.verify_client_request import verify_request_middleware
+from modules import Blueprint, make_response, request
+from repository.collection_repository import (
     _addPostToCollection,
     _createCollection,
     _deleteCollection,
     _removePostToCollection,
 )
-from backend.utils import LoggedUser
+from utils import LoggedUser
 
-collectionBlueprint = Blueprint("collections", __name__)
+collection_blueprint = Blueprint("collections", __name__)
 
 
 route = API_ENDPOINTS()
 
 
-@collectionBlueprint.route(route.collection.routeName, methods=route.collection.methods)
-@verifyRequestMiddleware(route.collection.routeName)
+@collection_blueprint.route(
+    route.collection.routeName, methods=route.collection.methods
+)
+@verify_request_middleware(route.collection.routeName)
 def collection(loggedUser: LoggedUser, *args, **kwargs):
     return make_response({}, 201)
 
 
 # /collections/create
-@collectionBlueprint.route(
+@collection_blueprint.route(
     route.createCollection.routeName, methods=route.createCollection.methods
 )
-@verifyRequestMiddleware(route.createCollection.routeName)
+@verify_request_middleware(route.createCollection.routeName)
 def createCollection(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     body = request.get_json()
@@ -43,11 +43,11 @@ def createCollection(loggedUser: LoggedUser, *args, **kwargs):
 
 
 # /collections/addPost
-@collectionBlueprint.route(
+@collection_blueprint.route(
     f"{route.addPostToCollection.routeName}/<int:collectionID>/<int:postID>",
     methods=route.addPostToCollection.methods,
 )
-@verifyRequestMiddleware(route.addPostToCollection.routeName)
+@verify_request_middleware(route.addPostToCollection.routeName)
 def addPost(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     collectionID = kwargs.get("collectionID")
@@ -62,11 +62,11 @@ def addPost(loggedUser: LoggedUser, *args, **kwargs):
 
 
 # /collections/removePost
-@collectionBlueprint.route(
+@collection_blueprint.route(
     f"{route.removePostFromCollection.routeName}/<int:collectionID>/<int:postID>",
     methods=route.removePostFromCollection.methods,
 )
-@verifyRequestMiddleware(route.removePostFromCollection.routeName)
+@verify_request_middleware(route.removePostFromCollection.routeName)
 def removePosts(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     collectionID = kwargs.get("collectionID")
@@ -83,11 +83,11 @@ def removePosts(loggedUser: LoggedUser, *args, **kwargs):
 
 
 # /collections/deleteCollection
-@collectionBlueprint.route(
+@collection_blueprint.route(
     f"{route.deleteCollection.routeName}/<int:collectionID>",
     methods=route.deleteCollection.methods,
 )
-@verifyRequestMiddleware(route.deleteCollection.routeName)
+@verify_request_middleware(route.deleteCollection.routeName)
 def deleteCollection(loggedUser: LoggedUser, *args, **kwargs):
     sessionUserID = loggedUser.userID
     collectionID = kwargs.get("collectionID")

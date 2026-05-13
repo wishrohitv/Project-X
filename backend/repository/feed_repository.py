@@ -18,30 +18,30 @@ Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def getHomeFeed(
+def _get_home_feed(
     category: list = [],
     offset: int = 0,
     limit: int = 10,
-    fetchTemplate: bool = False,
-    sessionUserID: int | None = None,
+    fetch_template: bool = False,
+    session_user_id: int | None = None,
 ):
     # Fetch only public posts and isReply false
-    conditions = [Posts.visibility, Posts.isReply.is_(False)]
-    if fetchTemplate:
-        conditions.append(Posts.isTemplate.is_(True))
-    feed = queryPosts(conditions, category, offset, limit, sessionUserID)
+    conditions = [Posts.visibility, Posts.is_reply.is_(False)]
+    if fetch_template:
+        conditions.append(Posts.is_template.is_(True))
+    feed = query_posts(conditions, category, offset, limit, session_user_id)
     if feed and len(feed) >= 0:
         return make_response({"payload": feed}, 200)
     else:
         return make_response({"payload": []}, 200)
 
 
-def queryPosts(
+def _query_posts(
     conditions,
     category: list = [],
     offset: int = 0,
     limit: int = 10,
-    sessionUserID: int | None = None,
+    session_user_id: int | None = None,
 ):
     """
     Global feed and post and replie query function
@@ -49,15 +49,15 @@ def queryPosts(
     # Get feed data from database alog with userName of author of post
     like = aliased(Likes)
     likeCount = (
-        select(func.count(like.userID))
-        .where(like.postID == Posts.id)
+        select(func.count(like.user_id))
+        .where(like.post_id == Posts.id)
         .correlate(Posts)
         .scalar_subquery()
     )
     repost = aliased(Reposts)
     repostCount = (
-        select(func.count(repost.userID))
-        .where(repost.postID == Posts.id)
+        select(func.count(repost.user_id))
+        .where(repost.post_id == Posts.id)
         .correlate(Posts)
         .scalar_subquery()
     )
@@ -88,17 +88,17 @@ def queryPosts(
             repliesCount.label("replieCount"),
             exists(
                 select(Likes).where(
-                    Likes.postID == Posts.id, Likes.userID == sessionUserID
+                    Likes.postID == Posts.id, Likes.userID == session_user_id
                 )
             ).label("isLiked"),
             exists(
                 select(Bookmark).where(
-                    Bookmark.postID == Posts.id, Bookmark.userID == sessionUserID
+                    Bookmark.postID == Posts.id, Bookmark.userID == session_user_id
                 )
             ).label("isBookmarked"),
             exists(
                 select(Reposts).where(
-                    Reposts.postID == Posts.id, Reposts.userID == sessionUserID
+                    Reposts.postID == Posts.id, Reposts.userID == session_user_id
                 )
             ).label("isReposted"),
         )
@@ -124,7 +124,7 @@ def queryPosts(
                 "fileType": feed[1].fileType,
                 "fileExtension": feed[1].fileExtension,
                 "visibility": feed[1].visibility,
-                "parentPostID": _getParentPost(feed[1].parentPostID, sessionUserID)
+                "parentPostID": _getParentPost(feed[1].parentPostID, session_user_id)
                 if not feed[1].isReply
                 else None,  # Check if post's 'isReply=True' send None because
                 "createdAt": feed[1].createdAt,
@@ -156,20 +156,20 @@ def queryPosts(
         raise Exception(e)
 
 
-def _getParentPost(postID: int, sessionUserID: int | None = None):
+def _getParentPost(postID: int, session_user_id: int | None = None):
     try:
         conditions = []
         # Fetch post by ID
         conditions.append(Posts.id == postID)
 
         # Check post visibility
-        if sessionUserID:
+        if session_user_id:
             # Check owner of the post
             post = session.query(Posts).where(Posts.id == postID).first()
             if not post:
                 return {"error": "Post not found"}
 
-            if not post.userID == sessionUserID:
+            if not post.userID == session_user_id:
                 # Check whether post's visibility is true or false
                 if not post.visibility:
                     return {"error": "Post is private"}

@@ -1,6 +1,6 @@
 from config import API_ENDPOINTS, ROLE
 from modules import functools, make_response, re, request
-from repository.checkUserRole import getUserRole
+from repository.check_user_role import get_user_role
 from utils import LoggedUser, decode_jwt_token
 
 apiEndpointsPartialAccess = API_ENDPOINTS().api_endpoints_partial_access
@@ -27,17 +27,19 @@ def verify_request_middleware(endpoint: str):
 
             if access_token:
                 try:
-                    decodedToken = decodeJwtToken(access_token)
-                    if decodedToken:
+                    decoded_token = decode_jwt_token(access_token)
+                    if decoded_token:
                         # Match the user id and role for this endpoint
-                        result = getUserRole(endpoint, decodedToken["payload"]["role"])
+                        result = get_user_role(
+                            endpoint, decoded_token["payload"]["role"]
+                        )
                         if result:
                             return func(
-                                loggedUser=LoggedUser(
-                                    userID=decodedToken["payload"]["id"],
-                                    roleID=decodedToken["payload"]["role"],
-                                    roleName=ROLE().rolesIds[
-                                        decodedToken["payload"]["role"]
+                                logge_user=LoggedUser(
+                                    user_id=decoded_token["payload"]["id"],
+                                    role_id=decoded_token["payload"]["role"],
+                                    role_name=ROLE().rolesIds[
+                                        decoded_token["payload"]["role"]
                                     ],
                                     access_token=access_token,
                                     refresh_token=refresh_token,

@@ -17,11 +17,11 @@ from .base import Base
 class Likes(Base):
     __tablename__ = "likes"
     id: Mapped[int] = mapped_column(primary_key=True)
-    postID: Mapped[int] = mapped_column(ForeignKey("posts.id"))
-    userID: Mapped[int] = mapped_column(ForeignKey("users.id"))
-    createdAt: Mapped[datetime] = mapped_column(
+    post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
+    user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
+    created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), default=datetime_utc()
     )
 
     def __repr__(self) -> str:
-        return f"Follower(postsID={self.postID!r}, userID={self.userID!r}), createdAt={self.createdAt!r}"
+        return f"Follower(post_id={self.post_id!r}, user_id={self.user_id!r}), createdAt={self.created_at!r}"

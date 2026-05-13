@@ -1,7 +1,7 @@
 from modules import re
 
 
-def get_user_names(text: str) -> list:
+def get_usernames(text: str) -> list:
     """
     Extracts all mentioned usernames from the given text.
     Usernames are expected to be prefixed with '@' and

@@ -13,14 +13,14 @@ from modules import (
     uuid,
 )
 from repository.user_respository import (
-    _addFollower,
-    _blockUser,
-    _getUserProfile,
-    _removeFollower,
-    _reportUser,
-    _unblockUser,
-    _updateProfileImg,
-    _updateUser,
+    _add_follower,
+    _block_user,
+    _get_user_profile,
+    _remove_follower,
+    _report_user,
+    _unblock_user,
+    _update_profile_img,
+    _update_user,
 )
 from utils import LoggedUser, SuccessResponse, upload_media
 
@@ -32,7 +32,7 @@ route = API_ENDPOINTS()
 # /user/<string:username>
 @users_blueprint.route(f"{route.user.route_name}", methods=route.user.methods)
 @verify_request_middleware(route.user.route_name)
-def user_get_profile_detail(loggedUser: LoggedUser | None = None, *args, **kwargs):
+def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwargs):
     username: str | None = kwargs.get("username") or request.args.get("username")
     user_id = request.args.get("user_id")
     user_email: str | None = request.args.get("email_id")
@@ -46,11 +46,11 @@ def user_get_profile_detail(loggedUser: LoggedUser | None = None, *args, **kwarg
             return make_response({"error": f"Invalid id {user_id} datatype"}, 400)
 
     try:
-        return _getUserProfile(
+        return _get_user_profile(
             _user_id=user_id,
             _username=username,
             _email=user_email,
-            session_user_id=loggedUser.user_id if loggedUser else None,
+            session_user_id=logged_user.user_id if logged_user else None,
         )
     except Exception as e:
         return make_response({"error": str(e)}, 500)
@@ -59,8 +59,8 @@ def user_get_profile_detail(loggedUser: LoggedUser | None = None, *args, **kwarg
 # /user/update
 @users_blueprint.route(route.user_update.route_name, methods=route.user_update.methods)
 @verify_request_middleware(route.user_update.route_name)
-def usersUpdateInfo(loggedUser: LoggedUser, *args, **kwargs):
-    sessionUserID = loggedUser.userID
+def usersUpdateInfo(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
     try:
         body = request.get_json()
         if not body:
@@ -71,8 +71,12 @@ def usersUpdateInfo(loggedUser: LoggedUser, *args, **kwargs):
         country = body.get("country")
         age = body.get("age")
 
-        return _updateUser(
-            sessionUserID=sessionUserID, name=name, bio=bio, country=country, age=age
+        return _update_user(
+            session_user_id=session_user_id,
+            name=name,
+            bio=bio,
+            country=country,
+            age=age,
         )
     except Exception as e:
         return make_response({"error": str(e)}, 500)
@@ -83,10 +87,10 @@ def usersUpdateInfo(loggedUser: LoggedUser, *args, **kwargs):
     route.user_change_profile.route_name, methods=route.user_change_profile.methods
 )
 @verify_request_middleware(route.user_change_profile.route_name)
-def users_UpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
+def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
     try:
-        profileMediaUid = str(uuid.uuid4())
-        sessionUserID = loggedUser.userID
+        profile_media_uid = str(uuid.uuid4())
+        session_user_id = logged_user.user_id
 
         file = request.files["file"]
         file.seek(0, 2)  # move to end of file
@@ -103,26 +107,26 @@ def users_UpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
                 400,
             )
 
-        fileExtension = file.filename.split(".")[-1]
+        file_extension = file.filename.split(".")[-1]
         _mediaUrl = None
-        _mediaPublicID = None
+        _media_public_id = None
         if USE_CLOUDINARY_STORAGE:
-            cloudResponse = upload_media(file=file.stream, public_id=profileMediaUid)
-            _mediaUrl = cloudResponse.get("url")
-            _mediaPublicID = cloudResponse.get("public_id")
+            cloud_response = upload_media(file=file.stream, public_id=profile_media_uid)
+            _mediaUrl = cloud_response.get("url")
+            _media_public_id = cloud_response.get("public_id")
         else:
             file.save(
                 os.path.join(
                     PUBLIC_DIRECTORY_PROFILES,
-                    secure_filename(f"{profileMediaUid}.{fileExtension}"),
+                    secure_filename(f"{profile_media_uid}.{file_extension}"),
                 )
             )
-            _mediaPublicID = profileMediaUid
-        return _updateProfileImg(
-            sessionUserID=sessionUserID,
-            mediaPublicID=_mediaPublicID,
-            fileExtension=fileExtension,
-            fileType=file.mimetype.split("/")[0],
+            _media_public_id = profile_media_uid
+        return _update_profile_img(
+            session_user_id=session_user_id,
+            media_public_id=_media_public_id,
+            file_extension=file_extension,
+            file_type=file.mimetype.split("/")[0],
         )
     except Exception as e:
         return make_response({"error": f"{e}"}, 500)
@@ -131,7 +135,7 @@ def users_UpdateProfileImg(loggedUser: LoggedUser, *args, **kwargs):
 # /user/delete
 @users_blueprint.route(route.user_delete.route_name, methods=route.user_delete.methods)
 @verify_request_middleware(route.user_delete.route_name)
-def usersDelete():
+def users_delete():
     raise NotImplementedError()
 
 
@@ -140,76 +144,74 @@ def usersDelete():
     route.user_remove_follower.route_name, methods=route.user_remove_follower.methods
 )
 @verify_request_middleware(route.user_remove_follower.route_name)
-def removeFollower(loggedUser: LoggedUser, *args, **kwargs):
-    sessionUserID = loggedUser.user_id
+def remove_follower(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
     body = request.get_json()
     if isinstance(body, dict):
-        targetUserID = body.get("userID")
-        if not isinstance(targetUserID, int):
-            return make_response({"error": f"Invalid {targetUserID} datatype"})
-        if targetUserID == sessionUserID:
+        target_user_id = body.get("user_id")
+        if not isinstance(target_user_id, int):
+            return make_response({"error": f"Invalid {target_user_id} datatype"})
+        if target_user_id == session_user_id:
             return make_response({"error": "user can't unfollow himself"}, 409)
         else:
-            return _removeFollower(sessionUserID, targetUserID)
+            return _remove_follower(session_user_id, target_user_id)
 
     else:
         return make_response({"error": "Expect json body"}, 401)
 
 
-# /user/follower
+#
 @users_blueprint.route(
     route.user_add_follower.route_name, methods=route.user_add_follower.methods
 )
 @verify_request_middleware(route.user_add_follower.route_name)
-def addFollower(loggedUser: LoggedUser, *agrs, **kwargs):
-    sessionUserID = loggedUser.userID
-    body = request.get_json()
-    if isinstance(body, dict):
-        targetUserID = body.get("userID")
-        if not isinstance(targetUserID, int):
-            return make_response({"error": f"Invalid {targetUserID} datatype"})
-        if targetUserID == sessionUserID:
-            return make_response({"error": "user can't follow himself"}, 409)
-        else:
-            return _addFollower(sessionUserID, targetUserID)
+def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
+    session_user_id = logged_user.user_id
+    target_user_id = kwargs.get("user_id")
+
+
+    if not isinstance(target_user_id, int):
+        return make_response({"error": f"Invalid {target_user_id} datatype"})
+    if target_user_id == session_user_id:
+        return make_response({"error": "user can't follow himself"}, 409)
+    else:
+        return _add_follower(session_user_id, target_user_id)
 
     else:
         return make_response({"error": "Expect json body"}, 401)
 
 
-@users_blueprint.route(
-    f"{route.user_block.route_name}/<int:userID>", methods=route.user_block.methods
-)
+@users_blueprint.route(route.user_block.route_name, methods=route.user_block.methods)
 @verify_request_middleware(route.user_block.route_name)
-def blockUser(loggedUser: LoggedUser, *args, **kwargs):
-    sessionUserID = loggedUser.userID
-    userID = kwargs.get("userID")
-    if not userID or not isinstance(userID, int):
-        return make_response({"error": f"Invalid userID {userID} dataype"}, 400)
-    return _blockUser(sessionUserID, userID)
+def block_user(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
+    user_id = kwargs.get("user_id")
+    if not user_id or not isinstance(user_id, int):
+        return make_response({"error": f"Invalid user_id {user_id} datatype"}, 400)
+    return _block_user(session_user_id, user_id)
 
 
 @users_blueprint.route(
-    f"{route.user_unblock.route_name}/<int:userID>", methods=route.user_unblock.methods
+    route.user_unblock.route_name, methods=route.user_unblock.methods
 )
 @verify_request_middleware(route.user_unblock.route_name)
-def unblockUser(loggedUser: LoggedUser, *args, **kwargs):
-    sessionUserID = loggedUser.userID
-    userID = kwargs.get("userID")
-    if not userID or not isinstance(userID, int):
-        return make_response({"error": f"Invalid userID {userID} dataype"}, 400)
-    return _unblockUser(sessionUserID, userID)
+def unblock_user(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
+    user_id = kwargs.get("user_id")
+    if not user_id or not isinstance(user_id, int):
+        return make_response({"error": f"Invalid user_id {user_id} datatype"}, 400)
+    return _unblock_user(session_user_id, user_id)
 
 
 @users_blueprint.route(
-    f"{route.user_report_users.route_name}/<int:userID>",
+    route.user_report_users.route_name,
     methods=route.user_report_users.methods,
 )
 @verify_request_middleware(route.user_report_users.route_name)
-def reportUser(loggedUser: LoggedUser, *args, **kwargs):
-    sessionUserID = loggedUser.userID
-    userID = kwargs.get("userID")
-    if not userID or not isinstance(userID, int):
-        return make_response({"error": f"Invalid userID {userID} dataype"}, 400)
+def report_user(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
+    user_id = kwargs.get("user_id")
+    if not user_id or not isinstance(user_id, int):
+        return make_response({"error": f"Invalid user_id {user_id} datatype"}, 400)
     reason = request.get_json().get("reason")
-    return _reportUser(sessionUserID, userID, reason or "")
+    return _report_user(session_user_id, user_id, reason or "")

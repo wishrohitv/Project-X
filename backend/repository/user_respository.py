@@ -85,11 +85,11 @@ def _signup_user(
         user_obj = {
             "id": new_user.id,
             "name": new_user.name,
-            "userName": new_user.username,
+            "username": new_user.username,
             "email": new_user.email,
             "join_date": new_user.created_at,
             "role": new_user.role,
-            "accountStatus": new_user.account_status.value,
+            "account_status": new_user.account_status.value,
         }
 
         return SuccessResponse(
@@ -100,16 +100,16 @@ def _signup_user(
         raise IndternalServerError(str(e))
 
 
-def _generate_otp_for_user(userID: int):
+def _generate_otp_for_user(user_id: int):
     # TODO: Implement rate limiting, and check email bounce
     try:
-        user = session.query(Users).filter(Users.id == userID).first()
+        user = session.query(Users).filter(Users.id == user_id).first()
         if not user:
             return make_response({"error": "User not found"}, 404)
         if user.is_verified:
             return make_response({"message": "User already verified"}, 400)
         otp = generate_otp()
-        redis_client.set(f"otp:{userID}", otp, ex=600)
+        redis_client.set(f"otp:{user_id}", otp, ex=600)
         send_otp(user.email, str(otp))
         session.close()
         return make_response({"message": "OTP generated successfully"}, 200)
@@ -119,16 +119,16 @@ def _generate_otp_for_user(userID: int):
         return make_response({"error": "Internal server error"}, 500)
 
 
-def _verify_user(userID: int, entered_otp: str):
+def _verify_user(user_id: int, entered_otp: str):
     # TODO: check user's verification state then allow for login
     try:
-        user = session.query(Users).filter(Users.id == userID).first()
+        user = session.query(Users).filter(Users.id == user_id).first()
         if not user:
             return make_response({"error": "User not found"}, 404)
         if user.is_verified:
             return make_response({"message": "User already verified"}, 400)
 
-        stored_otp = redis_client.get(f"otp:{userID}")
+        stored_otp = redis_client.get(f"otp:{user_id}")
         if not stored_otp:
             return make_response({"error": "OTP expired"}, 400)
         if stored_otp != entered_otp:
@@ -188,7 +188,7 @@ def _login_user(username, email, password):
             user_data=refresh_obj, expire_in_minute=REFRESH_TOKEN_EXPIRY_MINUTES
         )
 
-        stmt = Sessions(userID=users.id, refreshToken=refresh_token)
+        stmt = Sessions(user_id=users.id, refreshToken=refresh_token)
         session.add(stmt)
         session.commit()
         # Close the session
@@ -238,9 +238,9 @@ def _refresh_tokens(refresh_token: str):
             .join_from(Users, Sessions)
             .where(Sessions.refresh_token == refresh_token)
         )
-        userResult = session.execute(stmt).first()
+        user_result = session.execute(stmt).first()
         session.close()
-        if not userResult or refresh_token != userResult[1]:
+        if not user_result or refresh_token != user_result[1]:
             return make_response({"error": "Invalid refresh token"}, 401)
         # Delete previous refresh token of user
         stmt = (
@@ -252,7 +252,7 @@ def _refresh_tokens(refresh_token: str):
         session.commit()
         session.close()
 
-        user: Users = userResult[0]
+        user: Users = user_result[0]
 
         new_access_token = generate_jwt_token(
             user_data={
@@ -335,21 +335,21 @@ def _logout(refresh_token: str, user_id: int, all_devices=False):
         raise Exception(e)
 
 
-def _addFollower(session_user_id: int, user_id: int):
+def _add_follower(session_user_id: int, user_id: int):
     try:
-        checkIsAlreadyFollow = select(
+        is_already_follow = select(
             exists().where(
-                Follower.user_id == user_id, Follower.follower_id == sessionUserID
+                Follower.user_id == user_id, Follower.follower_id == session_user_id
             )
         )
-        isAlreadyFollows = session.scalar(
-            checkIsAlreadyFollow
+        is_already_follow = session.scalar(
+            is_already_follow
         )  # Scalar select first row from table
         session.close()
-        # If isAlreadyFollows
-        if not isAlreadyFollows:
-            newFollower = Follower(userID=userID, follower_id=sessionUserID)
-            session.add(newFollower)
+        # If is_already_follow
+        if not is_already_follow:
+            new_follower = Follower(user_id=user_id, follower_id=session_user_id)
+            session.add(new_follower)
             session.commit()
             session.close()
             return make_response(
@@ -363,45 +363,45 @@ def _addFollower(session_user_id: int, user_id: int):
         return make_response({"error": f"{e}"}, 500)
 
 
-def _removeFollower(
-    sessionUserID: int,
-    userID: int,
-    userRemoveFollower: bool = False,  # User wants to remove his follower itself
+def _remove_follower(
+    session_user_id: int,
+    user_id: int,
+    user_remove_follower: bool = False,  # User wants to remove his follower itself
 ):
     """
     Follower can unfollow user
     User can remove another user from following list
     """
     try:
-        if userRemoveFollower:
-            checkIsAlreadyFollow = select(
+        if user_remove_follower:
+            is_already_follow = select(
                 exists().where(
-                    Follower.userID == sessionUserID, Follower.follower_id == userID
+                    Follower.user_id == session_user_id, Follower.follower_id == user_id
                 )
             )
         else:
-            checkIsAlreadyFollow = select(
+            is_already_follow = select(
                 exists().where(
-                    Follower.userID == userID, Follower.follower_id == sessionUserID
+                    Follower.user_id == user_id, Follower.follower_id == session_user_id
                 )
             )
 
-        isAlreadyFollows = session.scalar(
-            checkIsAlreadyFollow
+        is_already_follow = session.scalar(
+            is_already_follow
         )  # Scalar select first row from table
 
         session.close()
-        # If isAlreadyFollows
-        if not isAlreadyFollows:
+        # If is_already_follow
+        if not is_already_follow:
             return make_response({"error": "User is not following requested user"}, 409)
 
-        if userRemoveFollower:
+        if user_remove_follower:
             stmt = delete(Follower).where(
-                Follower.userID == sessionUserID, Follower.follower_id == userID
+                Follower.user_id == session_user_id, Follower.follower_id == user_id
             )
         else:
             stmt = delete(Follower).where(
-                Follower.userID == userID, Follower.follower_id == sessionUserID
+                Follower.user_id == user_id, Follower.follower_id == session_user_id
             )
         session.execute(stmt)
         session.commit()
@@ -413,7 +413,7 @@ def _removeFollower(
         return make_response({"error": f"{e}"}, 500)
 
 
-def _getUserProfile(
+def _get_user_profile(
     _username: str | None = None,
     _email: str | None = None,
     _user_id: int | None = None,
@@ -429,7 +429,7 @@ def _getUserProfile(
 
     :param _username: Username of the user to be queried
     :param _email: Email address of the user to be queried
-    :param _userID: Unique identifier of the user to be queried
+    :param _user_id: Unique identifier of the user to be queried
     :return: JSON response containing the user's data if the user exists or an error
              message
     """
@@ -506,41 +506,41 @@ def _getUserProfile(
         raise IndternalServerError("Error while fetching user profile " + str(e))
 
 
-def _updateProfileImg(
-    sessionUserID: int,
-    mediaPublicID: str,
-    fileExtension: str,
-    fileType: str,
-    mediaUrl: str | None = None,
+def _update_profile_img(
+    session_user_id: int,
+    media_public_id: str,
+    file_extension: str,
+    file_type: str,
+    media_url: str | None = None,
 ):
     try:
-        userProfile = (
-            session.query(Profile).where(Profile.userID == sessionUserID).first()
+        user_profile = (
+            session.query(Profile).where(Profile.user_id == session_user_id).first()
         )
         session.close()
-        if not userProfile:
+        if not user_profile:
             return make_response({"message": "user does not exist"}, 404)
 
         # Delete previous profile image if exists
-        if userProfile.mediaPublicID:
+        if user_profile.media_public_id:
             if USE_CLOUDINARY_STORAGE:
-                deleteMedia([userProfile.mediaPublicID])
+                delete_media([user_profile.media_public_id])
             else:
                 filepath = os.path.join(
                     PUBLIC_DIRECTORY_PROFILES,
-                    f"{userProfile.mediaPublicID}.{userProfile.fileType}",
+                    f"{user_profile.media_public_id}.{user_profile.fileType}",
                 )
                 if os.path.exists(filepath):
                     os.remove(filepath)
 
         stmt = (
             update(Profile)
-            .where(Profile.userID == sessionUserID)
+            .where(Profile.user_id == session_user_id)
             .values(
-                mediaPublicID=mediaPublicID,
-                fileExtension=fileExtension,
-                fileType=fileType,
-                mediaUrl=mediaUrl,
+                media_public_id=media_public_id,
+                file_extension=file_extension,
+                file_type=file_type,
+                media_url=media_url,
             )
         )
         session.execute(stmt)
@@ -552,15 +552,15 @@ def _updateProfileImg(
         return make_response({"error": f"{e}"}, 500)
 
 
-def _updateUser(
-    sessionUserID: int,
+def _update_user(
+    session_user_id: int,
     name: str | None,
     bio: str | None,
     age: int | None,
     country: str | None,
 ):
     try:
-        user = session.query(Users).where(Users.id == sessionUserID).first()
+        user = session.query(Users).where(Users.id == session_user_id).first()
         if not user:
             return make_response({"message": "user does not exist"}, 404)
 
@@ -569,19 +569,19 @@ def _updateUser(
             user.name = name
             session.commit()
             session.close()
-        updateObj = {}
+        update_obj = {}
         if bio:
-            updateObj["bio"] = bio
+            update_obj["bio"] = bio
         if age:
-            updateObj["age"] = age
+            update_obj["age"] = age
         if country:
-            updateObj["country"] = country
+            update_obj["country"] = country
 
-        if len(updateObj) > 0:
+        if len(update_obj) > 0:
             stmt = (
                 update(Profile)
-                .where(Profile.userID == sessionUserID)
-                .values(**updateObj)
+                .where(Profile.user_id == session_user_id)
+                .values(**update_obj)
             )
             session.execute(stmt)
             session.commit()
@@ -592,19 +592,20 @@ def _updateUser(
         return make_response({"message": "failed to update user"}, 500)
 
 
-def _blockUser(sessionUserID: int, userID: int):
+def _block_user(session_user_id: int, user_id: int):
     try:
         # Check has user already blocked or not
         stmt = select(
             exists().where(
-                BlockedUsers.blockedBy == sessionUserID, BlockedUsers.userID == userID
+                BlockedUsers.blocked_by == session_user_id,
+                BlockedUsers.user_id == user_id,
             )
         )
         user = session.scalar(stmt)
         session.close()
         if not user:
-            blockedUser = BlockedUsers(userID=userID, blockedBy=sessionUserID)
-            session.add(blockedUser)
+            blocked_user = BlockedUsers(user_id=user_id, blocked_by=session_user_id)
+            session.add(blocke_user)
             session.commit()
             session.close()
             return make_response(
@@ -621,12 +622,13 @@ def _blockUser(sessionUserID: int, userID: int):
         return make_response({"error": f"{e}"}, 500)
 
 
-def _unblockUser(sessionUserID: int, userID: int):
+def _unblock_user(session_user_id: int, user_id: int):
     try:
         # Check has user already blocked or not
         stmt = select(
             exists().where(
-                BlockedUsers.blockedBy == sessionUserID, BlockedUsers.userID == userID
+                BlockedUsers.blocked_by == session_user_id,
+                BlockedUsers.user_id == user_id,
             )
         )
         user = session.scalar(stmt)
@@ -634,7 +636,8 @@ def _unblockUser(sessionUserID: int, userID: int):
         # Remove the user from the table
         if user:
             stmt = delete(BlockedUsers).where(
-                BlockedUsers.blockedBy == sessionUserID, BlockedUsers.userID == userID
+                BlockedUsers.blocked_by == session_user_id,
+                BlockedUsers.user_id == user_id,
             )
             session.execute(stmt)
             session.commit()
@@ -653,10 +656,10 @@ def _unblockUser(sessionUserID: int, userID: int):
         return make_response({"error": f"{e}"}, 500)
 
 
-def _reportUser(sessionUserID: int, userID: int, reason: str):
+def _report_user(session_user_id: int, user_id: int, reason: str):
     try:
         stmt = ReportedUsers(
-            reportedBy=sessionUserID, userID=userID, description=reason
+            reportedBy=session_user_id, user_id=user_id, description=reason
         )
         session.add(stmt)
         session.commit()

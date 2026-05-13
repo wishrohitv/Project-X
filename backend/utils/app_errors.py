@@ -44,38 +44,22 @@ class BadRequestError(AppError):
 class InvalidCredentialsError(AppError):
     def __init__(
         self,
-        code=401,
-        error="InvalidCredentialsError",
         message="Invalid credentials",
     ):
-        super().__init__(code=code, error=error, message=message)
-
-
-class TokenExpiredError(AppError):
-    def __init__(
-        self,
-        code=401,
-        error="TokenExpiredError",
-        message="Token has expired",
-    ):
-        super().__init__(code=code, error=error, message=message)
+        super().__init__(code=401, error="InvalidCredentialsError", message=message)
 
 
 class RateLimitExceededError(AppError):
     def __init__(
         self,
-        code=429,
-        error="RateLimitExceededError",
         message="Rate limit exceeded",
     ):
-        super().__init__(code=code, error=error, message=message)
+        super().__init__(code=429, error="RateLimitExceededError", message=message)
 
 
 class ConflictError(AppError):
     def __init__(
         self,
-        code=409,
-        error="ConflictError",
         message="Conflict",
     ):
-        super().__init__(code=code, error=error, message=message)
+        super().__init__(code=409, error="ConflictError", message=message)

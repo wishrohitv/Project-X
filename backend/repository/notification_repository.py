@@ -1,22 +1,21 @@
 from database import engine
-from flask.helpers import make_response
 from models import Notifications
 from models.enums import NotificationType
-from modules import or_, sessionmaker
+from modules import make_response, or_, sessionmaker
 from utils import Log
 
 Session = sessionmaker(bind=engine)
 session = Session()
 
 
-def _createNotification(
-    userID: int | None,
+def _create_notification(
+    user_id: int | None,
     notice: dict,
     type: NotificationType,
 ):
     try:
         notification = Notifications(
-            userID=userID,
+            user_id=user_id,
             notice=notice,
             type=type,
         )
@@ -30,18 +29,18 @@ def _createNotification(
         raise Exception(str(e))
 
 
-def _getNotifications(sessionUserID: int, mention: bool = False, offset: int = 0):
+def _get_notifications(session_user_id: int, mention: bool = False, offset: int = 0):
     condition = []
     if mention:
         condition.append(Notifications.type == NotificationType.mention)
         condition.append(
-            Notifications.userID == sessionUserID,
+            Notifications.user_id == session_user_id,
         )
     else:
         condition.append(
             or_(
-                Notifications.userID == sessionUserID,
-                Notifications.userID.is_(None),
+                Notifications.user_id == session_user_id,
+                Notifications.user_id.is_(None),
             )
         )
 
@@ -61,9 +60,9 @@ def _getNotifications(sessionUserID: int, mention: bool = False, offset: int = 0
                 "id": notice.id,
                 "type": notice.type.value,
                 "notice": notice.notice,
-                "createdAt": notice.createdAt,
-                "updatedAt": notice.updatedAt,
-                "readAt": notice.readAt,
+                "created_at": notice.created_at,
+                "updated_at": notice.updated_at,
+                "read_at": notice.read_at,
             }
             for notice in result
         ]

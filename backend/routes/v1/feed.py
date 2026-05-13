@@ -1,35 +1,35 @@
-from backend.config import API_ENDPOINTS
-from backend.middlewares.verify_client_request import verifyRequestMiddleware
-from backend.modules import Blueprint, make_response, request
-from backend.repository.feedRepository import getHomeFeed
-from backend.utils import LoggedUser
+from config import API_ENDPOINTS
+from middlewares.verify_client_request import verify_request_middleware
+from modules import Blueprint, make_response, request
+from repository.feed_repository import getHomeFeed
+from utils import LoggedUser
 
-feedBlueprint = Blueprint("feed", __name__)
+feed_blueprint = Blueprint("feed", __name__)
 
 route = API_ENDPOINTS()
 
 
 # /feed
-@feedBlueprint.route(route.feed.routeName, methods=route.feed.methods)
-@verifyRequestMiddleware(route.feed.routeName)
-def getFeed(loggedUser: LoggedUser | None = None, *args, **kwargs):
+@feed_blueprint.route(route.feed.route_name, methods=route.feed.methods)
+@verify_request_middleware(route.feed.route_name)
+def getFeed(logged_user: LoggedUser | None = None, *args, **kwargs):
     """
     Check if user is logged then build home feed based on his interests
     """
     offset = request.args.get("offset", type=int, default=0)
     limit = request.args.get("limit", type=int, default=10)
-    categoryIDs = request.args.get("category", type=list, default=[1])
+    category_ids = request.args.get("category", type=list, default=[1])
     template = str(request.args.get("template", default="False")).lower() == "true"
-    sessionUserID: int | None = loggedUser.userID if loggedUser else None
+    session_user_ids: int | None = logged_user.user_id if logged_user else None
     print(request.args.get("template", default="False"))
     if limit == 0 or limit > 30:
         return make_response({"error": "Invalid limit"}, 400)
     try:
         return getHomeFeed(
-            category=categoryIDs,
+            category=category_ids,
             offset=offset,
             limit=limit,
-            sessionUserID=sessionUserID,
+            session_user_ids=session_user_ids,
             fetchTemplate=template,
         )
     except Exception as e:

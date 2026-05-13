@@ -8,9 +8,10 @@ from modules import (
     Flask,
     jsonify,
     os,
+    traceback,
 )
 from repository.init_db_setup import init_db_setup
-from tasks import startWorker
+from tasks import start_worker
 from utils import AppError
 
 load_dotenv()
@@ -73,13 +74,17 @@ def run_app():
 
     @app.errorhandler(AppError)
     def handle_custom_error(error: AppError):
+        traceback.print_exc()
+        (getattr(error, "code", 500),)
         # Log the error, return a custom JSON response or render a custom template
-        response = jsonify(
-            {
-                "code": error.code,
-                "error": error.error,
-                "description": error.description,
-            }
+        response = (
+            jsonify(
+                {
+                    "code": error.code,
+                    "error": error.error,
+                    "description": error.description,
+                }
+            ),
         )
         response.status_code = error.code or 500
         return response
@@ -87,7 +92,7 @@ def run_app():
     # init_db_setup
     init_db_setup()
     # Start background worker
-    startWorker()
+    start_worker()
 
     return app
 
