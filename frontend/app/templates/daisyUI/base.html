@@ -7,7 +7,7 @@
         <meta name="viewport" content="width=device-width, initial-scale=1" />
         <link
             rel="icon"
-            href="{{ url_for('static' , filename = 'assets/appLogo/icon.png') }}"
+            href="{{ url_for('static' , filename = 'assets/logo/icon.png') }}"
             type="image/x-icon"
         />
         <!--  DaisyUI cdn  -->
@@ -39,8 +39,8 @@
     <body style="overflow-x: clip">
         <!-- Nav bar macro -->
         <div>
-            {% from 'macrosComponent/navBarMacro.html' import navBarMacro with
-            context %} {{ navBarMacro() }}
+            {% from 'macros/navBarMacro.html' import navBarMacro with context %}
+            {{ navBarMacro() }}
         </div>
 
         <!--  Body block for content  -->
@@ -48,8 +48,8 @@
 
         <!--  Footer  -->
         <div>
-            {% from 'macrosComponent/footerMacro.html' import footerMacro with
-            context %} {{ footerMacro() }}
+            {% from 'macros/footerMacro.html' import footerMacro with context %}
+            {{ footerMacro() }}
         </div>
 
         <!-- js file to perform client side work -->

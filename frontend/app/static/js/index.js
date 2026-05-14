@@ -46,10 +46,10 @@ const router = async () => {
     { path: "/auth/login", view: LoginView },
     { path: "/auth/logout", view: LogoutView },
     { path: "/auth/signup", view: SignupView },
-    { path: "/edit/profile/:userName", view: EditProfileView },
-    { path: "/user/:userName", view: ProfileView },
+    { path: "/edit/profile/:username", view: EditProfileView },
+    { path: "/:username", view: ProfileView },
     { path: "/post/create", view: CreatePostView },
-    { path: "/post/:postID", view: PostView },
+    { path: "/i/:postID", view: PostView },
   ];
 
   // Test each route for potential match

@@ -1,4 +1,4 @@
-from frontend.modules import Constants
+from modules import Constants
 
 
 def constants():

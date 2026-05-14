@@ -1,8 +1,8 @@
-from frontend.app.app import createApp
-from frontend.constant import Constants
+from app.app import run_app
+from constant import Constants
 
 # run App
-app = createApp()
+app = run_app()
 
 if __name__ == "__main__":
     app.run(debug=True, host=Constants.HOST, port=Constants.PORT)

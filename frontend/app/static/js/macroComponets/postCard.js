@@ -208,7 +208,7 @@ export async function postCard(
       shareText.innerText = "Copied!";
       shareText.classList.add("text-purple-500");
       await navigator.clipboard.writeText(
-        `${window.location.origin}/post/${post.postID}`,
+        `${window.location.origin}/i/${post.postID}`,
       );
       flash("Copied to clipboard!", "success");
       setTimeout(() => {
@@ -233,8 +233,8 @@ export async function postCard(
   });
   // Link of creator's profile
   clone.querySelector(".postUserPic").src = post.profileImgUrl;
-  clone.querySelector(".postUserName").href = `/user/${post.userName}`;
-  clone.querySelector(".userProfileLink").href = `/user/${post.userName}`;
+  clone.querySelector(".postUserName").href = `/${post.userName}`;
+  clone.querySelector(".userProfileLink").href = `/${post.userName}`;
   clone.querySelector(".createdAt").innerText = formatDate(post.createdAt);
 
   // Load parent post

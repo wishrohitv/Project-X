@@ -144,7 +144,7 @@ export function manageNavbar() {
   if (user) {
     profileBtnContainer.classList.remove("hidden");
     const ankerTag = profileBtnContainer.querySelector("#goToProfile");
-    ankerTag.href = `/user/${user.userName}`;
+    ankerTag.href = `/${user.username}`;
     const loggedProfileLogo =
       profileBtnContainer.querySelector("#loggedProfileLogo");
     loggedProfileLogo.src = user.profileImgUrl;

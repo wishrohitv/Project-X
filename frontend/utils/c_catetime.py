@@ -1,5 +1,6 @@
 from datetime import UTC
-from frontend.modules import datetime
+
+from modules import datetime
 
 
 class CDateTime:

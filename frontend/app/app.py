@@ -1,11 +1,11 @@
-from frontend.modules import (
+from modules import (
     Constants,
     Flask,
     render_template,
 )
 
 
-def createApp():
+def run_app():
     app = Flask(
         __name__,
         static_folder="static/",  # static folder of app.py
@@ -16,8 +16,8 @@ def createApp():
     app.secret_key = Constants.APP_SECRET_KEY
 
     ## Context processors
-    from frontend.utils.contextProcessors.constants import constants
-    from frontend.utils.contextProcessors.dateTime import dateTime
+    from utils.context_processors.constants import constants
+    from utils.context_processors.dateTime import dateTime
 
     ## Register context processors
     app.context_processor(dateTime)

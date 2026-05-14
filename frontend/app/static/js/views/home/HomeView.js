@@ -102,10 +102,10 @@ export default class extends AbstractView {
           const clone = postTemplate.content.cloneNode(true);
           let card = await postCard(clone, post, {
             mainCardClbk: (postID) => {
-              this.navigator("/post/" + postID);
+              this.navigator("/i/" + postID);
             },
             parentCardClbk: (parentPostID) => {
-              this.navigator("/post/" + parentPostID);
+              this.navigator("/i/" + parentPostID);
             },
           });
           this.postContainer.appendChild(card);

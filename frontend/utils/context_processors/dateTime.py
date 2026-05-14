@@ -1,4 +1,4 @@
-from frontend.utils.cDatetime import CDateTime
+from utils.c_catetime import CDateTime
 
 
 def dateTime():
