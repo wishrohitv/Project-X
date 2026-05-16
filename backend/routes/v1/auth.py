@@ -43,8 +43,8 @@ def signup():
         name = body.get("name")
         username = body.get("username")
         email = body.get("email")
-        password1 = body.get("password1")
-        password2 = body.get("password2")
+        password1 = body.get("password_1")
+        password2 = body.get("password_2")
         country = body.get("country") if None else "world"
 
         if not (username or email or password1 or password2):

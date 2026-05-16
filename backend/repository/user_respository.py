@@ -44,6 +44,7 @@ from utils import (
     match_password,
     return_hashed_bytes,
 )
+from werkzeug.exceptions import InternalServerError
 
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -188,7 +189,7 @@ def _login_user(username, email, password):
             user_data=refresh_obj, expire_in_minute=REFRESH_TOKEN_EXPIRY_MINUTES
         )
 
-        stmt = Sessions(user_id=users.id, refreshToken=refresh_token)
+        stmt = Sessions(user_id=users.id, refreshtoken=refresh_token)
         session.add(stmt)
         session.commit()
         # Close the session
@@ -202,14 +203,14 @@ def _login_user(username, email, password):
             200,
         )
         res.set_cookie(
-            key="access_token",
+            key="access-token",
             value=access_token,
             httponly=HTTP_ONLY,
             secure=SECURE_COOKIE,
             max_age=ACCESS_TOKEN_EXPIRY_MINUTES * 60,
         )
         res.set_cookie(
-            key="refresh_token",
+            key="refresh-token",
             value=refresh_token,
             httponly=HTTP_ONLY,
             secure=SECURE_COOKIE,
