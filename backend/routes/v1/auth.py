@@ -11,16 +11,16 @@ from modules import (
     make_response,
     request,
 )
-from repository.user_respository import (
+from repository.auth_repository import (
     _generate_otp_for_user,
-    _get_user_profile,
     _login_user,
     _logout,
     _refresh_tokens,
     _signup_user,
     _verify_user,
 )
-from utils import LoggedUser
+from repository.user_repository import _get_user_profile
+from utils import BadRequestError, InternalServerError, LoggedUser, UnAuthorizedError
 
 auth_blueprint = Blueprint("auth", __name__)
 """
@@ -70,22 +70,19 @@ def signup():
 # /auth/login
 @auth_blueprint.route(route.auth_login.route_name, methods=route.auth_login.methods)
 def login():
-    try:
-        body = request.get_json()
-        if isinstance(body, dict):
-            username = body.get("username")
-            email = body.get("email")
-            password = body.get("password")
-            if not (username or email):
-                return make_response({"error": "Username or email is required"}, 400)
-            if not password:
-                return make_response({"error": "Password is required"}, 400)
+    body = request.get_json()
+    if not isinstance(body, dict):
+        raise BadRequestError("Expect json body")
 
-            return _login_user(username=username, email=email, password=password)
-        else:
-            return make_response({"error": "Expect json body"}, 401)
-    except Exception as e:
-        return make_response({"error": str(e)}, 500)
+    username = body.get("username")
+    email = body.get("email")
+    password = body.get("password")
+    if not (username or email):
+        raise BadRequestError("Username or email is required")
+    if not password:
+        raise BadRequestError("Password is required")
+
+    return _login_user(username=username, email=email, password=password)
 
 
 # "/auth/logout"
@@ -126,18 +123,24 @@ def refresh_token():
         return make_response({"error": str(e)}, 401)
 
 
+#
 @auth_blueprint.route(
     route.auth_generate_otp.route_name, methods=route.auth_generate_otp.methods
 )
-def generate_otp(user_id):
+def generate_otp():
+    body = request.get_json()
+    user_id = body.get("user_id")
     return _generate_otp_for_user(user_id)
 
 
 @auth_blueprint.route(
-    route.auth_verify.route_name,
-    methods=route.auth_verify.methods,
+    route.auth_verify_otp.route_name,
+    methods=route.auth_verify_otp.methods,
 )
-def verify(user_id, otp):
+def verify():
+    body = request.get_json()
+    user_id = body.get("user_id")
+    otp = body.get("otp")
     return _verify_user(user_id, otp)
 
 

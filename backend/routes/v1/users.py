@@ -12,7 +12,7 @@ from modules import (
     secure_filename,
     uuid,
 )
-from repository.user_respository import (
+from repository.user_repository import (
     _add_follower,
     _block_user,
     _get_user_profile,

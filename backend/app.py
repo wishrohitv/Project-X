@@ -68,22 +68,17 @@ def run_app():
 
     @app.errorhandler(AppError)
     def handle_custom_error(error: AppError):
-        traceback.print_exc()
-        print(error.code)
-        # getattr(error, "code", 500)
+        if error.code >= 500:
+            traceback.print_exception(
+                type(error),
+                error,
+                error.__traceback__,
+            )
+
         # Log the error, return a custom JSON response or render a custom template
-        response = (
-            jsonify(
-                {
-                    "code": error.code,
-                    "error": error.error,
-                    "description": error.description,
-                }
-            ),
-            error.code or 500,
-        )
-        # response.status_code = error.code or 500
-        return response[0]
+        return jsonify(
+            {"code": error.code, "error": error.error, "description": error.description}
+        ), error.code
 
     # init_db_setup
     init_db_setup()

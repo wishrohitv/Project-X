@@ -33,7 +33,7 @@ from modules import (
 from services.mail_service import send_otp
 from utils import (
     BadRequestError,
-    IndternalServerError,
+    InternalServerError,
     LoggedUser,
     ResourceNotFoundError,
     SuccessResponse,
@@ -44,7 +44,6 @@ from utils import (
     match_password,
     return_hashed_bytes,
 )
-from werkzeug.exceptions import InternalServerError
 
 Session = sessionmaker(bind=engine)
 session = Session()
@@ -98,7 +97,7 @@ def _signup_user(
         )
     except Exception as e:
         session.rollback()
-        raise IndternalServerError(str(e))
+        raise InternalServerError(str(e))
 
 
 def _generate_otp_for_user(user_id: int):
@@ -221,8 +220,8 @@ def _login_user(username, email, password):
 
     except Exception as e:
         session.rollback()
-        print(e)
-        raise Exception(e)
+        print("hii")
+        raise InternalServerError(str(e)) from e
 
 
 def _refresh_tokens(refresh_token: str):
@@ -504,7 +503,7 @@ def _get_user_profile(
         else:
             raise ResourceNotFoundError("User does not exist")
     except Exception as e:
-        raise IndternalServerError("Error while fetching user profile " + str(e))
+        raise InternalServerError("Error while fetching user profile " + str(e))
 
 
 def _update_profile_img(
@@ -606,7 +605,7 @@ def _block_user(session_user_id: int, user_id: int):
         session.close()
         if not user:
             blocked_user = BlockedUsers(user_id=user_id, blocked_by=session_user_id)
-            session.add(blocke_user)
+            session.add(blocked_user)
             session.commit()
             session.close()
             return make_response(

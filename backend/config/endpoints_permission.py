@@ -37,14 +37,14 @@ class API_ENDPOINTS:
     )
     auth_generate_otp = RouteAccess(
         # Generate otp for verification
-        route_name="/auth/otp/generate/<int:user_id>",
+        route_name="/auth/otp/generate",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
         partial_access=True,
     )
-    auth_verify = RouteAccess(
+    auth_verify_otp = RouteAccess(
         # Verify otp
-        route_name="/auth/otp/verify/<int:user_id>/<string:otp>",
+        route_name="/auth/otp/verify",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["POST"],
         partial_access=True,

@@ -23,7 +23,7 @@ class AppError(HTTPException):
         self.message = message
 
 
-class IndternalServerError(AppError):
+class InternalServerError(AppError):
     def __init__(
         self,
         message="Internal sever error",
@@ -47,6 +47,14 @@ class InvalidCredentialsError(AppError):
         message="Invalid credentials",
     ):
         super().__init__(code=401, error="InvalidCredentialsError", message=message)
+
+
+class UnAuthorizedError(AppError):
+    def __init__(
+        self,
+        message="Unauthorized error",
+    ):
+        super().__init__(code=401, error="UnAuthorizedError", message=message)
 
 
 class RateLimitExceededError(AppError):
