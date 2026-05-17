@@ -24,6 +24,8 @@ class AppError(HTTPException):
 
 
 class InternalServerError(AppError):
+    """Internal server error : An unexpected error occurred on the server."""
+
     def __init__(
         self,
         message="Internal sever error",
@@ -32,16 +34,22 @@ class InternalServerError(AppError):
 
 
 class ResourceNotFoundError(AppError):
+    """Resource not found error : The requested resource could not be found."""
+
     def __init__(self, message="Resource not found"):
         super().__init__(code=404, error="ResourceNotFoundError", message=message)
 
 
 class BadRequestError(AppError):
+    """Bad request error : The request was invalid or cannot be served."""
+
     def __init__(self, error="Bad request"):
         super().__init__(code=400, error="BaddRequestError", message=error)
 
 
 class InvalidCredentialsError(AppError):
+    """Invalid credentials error : The provided credentials are invalid."""
+
     def __init__(
         self,
         message="Invalid credentials",
@@ -50,6 +58,8 @@ class InvalidCredentialsError(AppError):
 
 
 class UnAuthorizedError(AppError):
+    """Unauthorized error : The request requires user authentication."""
+
     def __init__(
         self,
         message="Unauthorized error",
@@ -57,7 +67,21 @@ class UnAuthorizedError(AppError):
         super().__init__(code=401, error="UnAuthorizedError", message=message)
 
 
+class ForbiddenError(AppError):
+    """
+    Forbidden error : The server understood the request but refuses to authorize it.
+    """
+
+    def __init__(
+        self,
+        message="Forbidden error",
+    ):
+        super().__init__(code=403, error="ForbiddenError", message=message)
+
+
 class RateLimitExceededError(AppError):
+    """Rate limit exceeded error : The request was rate-limited."""
+
     def __init__(
         self,
         message="Rate limit exceeded",
@@ -66,6 +90,8 @@ class RateLimitExceededError(AppError):
 
 
 class ConflictError(AppError):
+    """Conflict error : The request could not be completed due to a conflict."""
+
     def __init__(
         self,
         message="Conflict",
