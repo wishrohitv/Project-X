@@ -410,7 +410,7 @@ def _report_user(session_user_id: int, user_id: int, reason: str):
     session = SessionLocal()
     try:
         stmt = ReportedUsers(
-            reportedBy=session_user_id, user_id=user_id, description=reason
+            reported_by=session_user_id, user_id=user_id, description=reason
         )
         session.add(stmt)
         session.commit()

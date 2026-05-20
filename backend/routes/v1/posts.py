@@ -23,7 +23,7 @@ from repository.post_repository import (
     _get_post_reqouted_users,
     _post_toggle_bookmark,
     _post_toggle_like,
-    _reportPost,
+    _report_post,
     _repost_post,
     _update_post,
     _user_posts,
@@ -369,9 +369,9 @@ def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
     methods=route.report_post.methods,
 )
 @verify_request_middleware(route.report_post.route_name)
-def reportPost(logged_user: LoggedUser, *args, **kwargs):
+def report_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     post_id: int = kwargs["post_id"]
 
     reason = request.get_json().get("reason")
-    return _reportPost(session_user_id=session_user_id, post_id=post_id, reason=reason)
+    return _report_post(session_user_id=session_user_id, post_id=post_id, reason=reason)

@@ -447,11 +447,11 @@ def _get_post_by_id_or_post_replies_by_id(
         session.close()
 
 
-def _report_post(sessionUserID: int, postID: int, reason: str):
+def _report_post(session_user_id: int, post_id: int, reason: str):
     session = SessionLocal()
     try:
         post = ReportedPosts(
-            reportedBy=sessionUserID, postID=postID, description=reason
+            reported_by=session_user_id, post_id=post_id, description=reason
         )
         session.add(post)
         session.commit()
