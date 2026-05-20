@@ -1,4 +1,4 @@
-from database import engine
+from database import SessionLocal
 from models import (
     AgeRating,
     Bookmark,
@@ -19,6 +19,7 @@ from modules import (
     exists,
     func,
     functools,
+    json,
     make_response,
     or_,
     os,
@@ -28,12 +29,19 @@ from modules import (
     url_for,
 )
 from tasks import add_task_in_queue, mention, reply
-from utils import Log, delete_media
+from utils import (
+    AppError,
+    BadRequestError,
+    ForbiddenError,
+    InternalServerError,
+    Log,
+    ResourceNotFoundError,
+    SuccessResponse,
+    UnAuthorizedError,
+    delete_media,
+)
 
 from .feed_repository import _query_posts
-
-Session = sessionmaker(bind=engine)
-session = Session()
 
 
 def _create_post(
@@ -107,6 +115,7 @@ def _create_post(
 
 
 def _post_toggle_like(session_user_id: int, post_id: int):
+    session = SessionLocal()
     try:
         is_already_liked = (
             session.query(Likes)
@@ -119,8 +128,10 @@ def _post_toggle_like(session_user_id: int, post_id: int):
             session.add(like_post)
             session.commit()
             session.close()
-            return make_response(
-                {"isLiked": True, "message": "Post liked successfully"}, 201
+            return SuccessResponse(
+                data={"is_liked": True},
+                message="Post liked successfully",
+                status_code=201,
             )
         else:
             # remove like from post
@@ -129,15 +140,21 @@ def _post_toggle_like(session_user_id: int, post_id: int):
             )
             session.execute(de_like)
             session.commit()
-            return make_response(
-                {"isLiked": False, "message": "Post like removed successfully"}, 201
+            return SuccessResponse(
+                data={"is_liked": False},
+                message="Post like removed successfully",
+                status_code=201,
             )
+
     except Exception as e:
         session.rollback()
-        raise Exception(str(e))
+        raise InternalServerError("Error while toggling post like") from e
+    finally:
+        session.close()
 
 
 def _post_toggle_bookmark(session_user_id: int, post_id: int):
+    session = SessionLocal()
     try:
         is_already_bookmarked = (
             session.query(Bookmark)
@@ -149,10 +166,12 @@ def _post_toggle_bookmark(session_user_id: int, post_id: int):
             bookmark_post = Bookmark(post_id=post_id, user_id=session_user_id)
             session.add(bookmark_post)
             session.commit()
-            session.close()
-            return make_response(
-                {"isBookmarked": True, "message": "Post bookmark successfully"}, 201
+            return SuccessResponse(
+                data={"is_bookmarked": True},
+                message="Post bookmarked successfully",
+                status_code=201,
             )
+
         else:
             # Remove row from Bookmark
             de_like = delete(Bookmark).filter(
@@ -160,26 +179,28 @@ def _post_toggle_bookmark(session_user_id: int, post_id: int):
             )
             session.execute(de_like)
             session.commit()
-            return make_response(
-                {
-                    "isBookmarked": False,
-                    "message": "Post bookmark removed successfully",
-                },
-                201,
+            return SuccessResponse(
+                data={"is_bookmarked": False},
+                message="Post bookmark removed successfully",
+                status_code=201,
             )
     except Exception as e:
         session.rollback()
-        raise Exception(str(e))
+        raise InternalServerError("Error while bookmarking post") from e
+    finally:
+        session.close()
 
 
 def _delete_post(post_id: int, session_user_id: int):
+    # TODO : Hndle edge case
+    session = SessionLocal()
     try:
         result = (
             session.query(Posts).filter_by(id=post_id, user_id=session_user_id).first()
         )
         # Check ownership of the post
         if not result:
-            raise Exception("You do not have permission to delete this post")
+            raise UnAuthorizedError("You do not have permission to delete this post")
         # Delete the media
         if USE_CLOUDINARY_STORAGE:
             delete_media([result.media_public_id])
@@ -191,12 +212,18 @@ def _delete_post(post_id: int, session_user_id: int):
                 os.remove(filepath)
         session.delete(result)
         session.commit()
+    except AppError:
+        session.rollback()
+        raise
     except Exception as e:
         session.rollback()
-        raise Exception(str(e))
+        raise InternalServerError("Error while deleting post") from e
+    finally:
+        session.close()
 
 
 def _repost_post(post_id: int, session_user_id: int):
+    session = SessionLocal()
     # Toggle repost
     try:
         is_repost = (
@@ -210,20 +237,31 @@ def _repost_post(post_id: int, session_user_id: int):
             )
             session.execute(stmt)
             session.commit()
-            return make_response(
-                {"message": "Post repost removed successfully", "is_reposted": False},
-                201,
+            return SuccessResponse(
+                data={"is_reposted": False},
+                message="Post repost removed successfully",
+                status_code=201,
             )
+
         else:
             repost = Reposts(post_id=post_id, user_id=session_user_id)
             session.add(repost)
             session.commit()
-            return make_response(
-                {"message": "Post reposted successfully", "is_reposted": True}, 201
+            return SuccessResponse(
+                data={"is_reposted": True},
+                message="Post reposted successfully",
+                status_code=201,
             )
+
+    except AppError:
+        session.rollback()
+        raise
+
     except Exception as e:
         session.rollback()
-        raise Exception(str(e))
+        raise InternalServerError("Error while reposting post") from e
+    finally:
+        session.close()
 
 
 def _update_post(
@@ -235,11 +273,12 @@ def _update_post(
     category: int | None = None,
     visibility: bool | None = None,
 ):
+    session = SessionLocal()
     try:
         # Check ownership of this post
         post = session.query(Posts).filter(Posts.id == post_id).first()
         if not post or post.user_id != session_user_id:
-            raise Exception("You do not have permission to update this post")
+            raise UnAuthorizedError("You do not have permission to update this post")
 
         update_value = {}
         if title:
@@ -256,9 +295,13 @@ def _update_post(
         stmt = update(Posts).where(Posts.id == post_id).values(update_value)
         session.execute(stmt)
         session.commit()
+    except AppError:
+        raise
     except Exception as e:
         session.rollback()
-        raise Exception(str(e))
+        raise InternalServerError("Error while updating post") from e
+    finally:
+        session.close()
 
 
 def _user_posts(
@@ -271,6 +314,7 @@ def _user_posts(
     limit: int = 10,
     offset: int = 0,
 ):
+    session = SessionLocal()
     """
     Check if user is logged and session_user_id = username then fetch private posts too
     if user is logged but session_user_id != username then fetch public posts only
@@ -288,13 +332,13 @@ def _user_posts(
 
         user = session.query(Users).where(Users.username == username).first()
         if not user:
-            return make_response({"error": "User not found"}, 404)
+            raise ResourceNotFoundError("User not found")
         if user.account_status == "suspended":
-            return make_response({"error": "Account is suspended"}, 404)
+            raise ForbiddenError("Account is suspended")
         if user.account_status == "deleted":
-            return make_response({"error": "Account is deleted"}, 404)
+            raise ForbiddenError("Account is deleted")
         if user.account_status == "banned":
-            return make_response({"error": "Account is banned"}, 404)
+            return ForbiddenError("Account is banned")
 
         if fetch_bookmarked:
             conditions.append(Bookmark.user_id == user.id)
@@ -305,13 +349,13 @@ def _user_posts(
             limit=limit,
             session_user_id=session_user_id,
         )
-        if len(posts) > 0:
-            return make_response({"payload": posts}, 200)
-        else:
-            return make_response({"payload": []}, 200)
+        return SuccessResponse(
+            data=json.dumps(posts), message="Fetched user's post", status_code=200
+        )
+    except AppError:
+        raise
     except Exception as e:
-        print(f"Error fetching user posts: {e}")
-        return make_response({"error": str(e)}, 500)
+        raise InternalServerError("Error while fetching user's posts") from e
 
 
 def _get_post_media(
@@ -345,67 +389,84 @@ def _get_post_by_id_or_post_replies_by_id(
     limit: int = 10,
     offset: int = 0,
 ):
-    conditions = []
-    if fetch_replies:
-        conditions.append(Posts.parent_post_id == post_id)
-        conditions.append(
-            Posts.is_reply
-        )  # `not Posts.is_reply` is not working as false
-        conditions.append(Posts.visibility)  # Fetch only public posts
-    else:
-        #  Fetch post by ID
-        conditions.append(Posts.id == post_id)
+    session = SessionLocal()
+    try:
+        conditions = []
+        if fetch_replies:
+            conditions.append(Posts.parent_post_id == post_id)
+            conditions.append(
+                Posts.is_reply
+            )  # `not Posts.is_reply` is not working as false
+            conditions.append(Posts.visibility)  # Fetch only public posts
+        else:
+            #  Fetch post by ID
+            conditions.append(Posts.id == post_id)
 
-        # Check post visibility
-        if session_user_id:
-            # Check owner of the post
-            post = session.query(Posts).where(Posts.id == post_id).first()
-            if not post:
-                return make_response({"error": "Post not found"}, 404)
+            # Check post visibility
+            if session_user_id:
+                # Check owner of the post
+                post = session.query(Posts).where(Posts.id == post_id).first()
+                if not post:
+                    raise ResourceNotFoundError("Post not found")
 
-            if post.user_id == session_user_id:
-                # Give the access to the private post to owner
-                # Note : implement superadmin and moderator can access private post for enquiry
-                conditions.append(not Posts.visibility)
-            else:
-                # Check whether post's visibility is true or false
-                if not post.visibility:
-                    return make_response({"error": "Post is private"}, 403)
-                conditions.append(Posts.visibility)
-    posts_or_replies = _query_posts(
-        conditions=conditions,
-        offset=offset,
-        limit=limit,
-        session_user_id=session_user_id,
-    )
-    if posts_or_replies:
-        if len(posts_or_replies) == 0:
-            return make_response(
-                {
-                    "payload": [],
-                    "message": "No replies found or post dosen't exists",
-                },
-                200,
+                if post.user_id == session_user_id:
+                    # Give the access to the private post to owner
+                    # Note : implement superadmin and moderator can access private post for enquiry
+                    conditions.append(not Posts.visibility)
+                else:
+                    # Check whether post's visibility is true or false
+                    if not post.visibility:
+                        raise ForbiddenError("Post is private")
+                    conditions.append(Posts.visibility)
+        posts_or_replies = _query_posts(
+            conditions=conditions,
+            offset=offset,
+            limit=limit,
+            session_user_id=session_user_id,
+        )
+        if posts_or_replies:
+            if len(posts_or_replies) == 0:
+                return SuccessResponse(
+                    message="No replies found or post dosen't exists",
+                    data={},
+                    status_code=200,
+                )
+            return SuccessResponse(
+                message="Post retrieved successfully",
+                data=json.dumps(posts_or_replies),
+                status_code=200,
             )
-        return make_response({"payload": posts_or_replies}, 200)
-    else:
-        return make_response({"error": "Post not found"}, 404)
+        else:
+            raise ResourceNotFoundError("Post not found")
+    except AppError:
+        session.rollback()
+        raise
+    except Exception as e:
+        raise InternalServerError("Error while fetching posts by id") from e
+    finally:
+        session.close()
 
 
-def _reportPost(sessionUserID: int, postID: int, reason: str):
+def _report_post(sessionUserID: int, postID: int, reason: str):
+    session = SessionLocal()
     try:
         post = ReportedPosts(
             reportedBy=sessionUserID, postID=postID, description=reason
         )
         session.add(post)
         session.commit()
-        session.close()
-        return make_response({"message": "Post reported successfully"}, 201)
+
+        return SuccessResponse(
+            data={}, message="Post reported successfully", status_code=201
+        )
+    except AppError:
+        session.rollback()
+        raise
     except Exception as e:
         session.rollback()
+        raise InternalServerError("Error while reporting post") from e
+    finally:
         session.close()
-        print(e)
-        return make_response({"error": f"{e}"}, 500)
 
 
 def _get_post_liked_users(
@@ -474,6 +535,7 @@ def _fetch_post_users(
     limit: int = 10,
     offset: int = 0,
 ):
+    session = SessionLocal()
     # TODO: prevent access of data if post is unavailable
     try:
         stmt = (
@@ -501,7 +563,6 @@ def _fetch_post_users(
             .offset(offset)
         )
         result = session.execute(stmt).all()
-        session.close()
         fetched_users = [
             {
                 "user_id": user.id,
@@ -517,6 +578,10 @@ def _fetch_post_users(
             }
             for user in result
         ]
-        return make_response({"payload": fetched_users}, 200)
+        return SuccessResponse(
+            data=json.dumps(fetched_users), message="Fetched data", status_code=200
+        )
     except Exception as e:
-        return Exception(str(e))
+        raise
+    finally:
+        session.close()

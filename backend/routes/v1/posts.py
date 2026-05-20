@@ -28,19 +28,28 @@ from repository.post_repository import (
     _update_post,
     _user_posts,
 )
-from utils import Log, LoggedUser, upload_media
+from utils import (
+    BadRequestError,
+    ConflictError,
+    Log,
+    LoggedUser,
+    ResourceNotFoundError,
+    SuccessResponse,
+    UnAuthorizedError,
+    upload_media,
+)
 
 posts_blueprint = Blueprint("posts", __name__)
 
 route = API_ENDPOINTS()
 
 
-# /posts/<string:userName>
+# /posts/<string:username> GET
 # Unlogged user can access public posts
 @posts_blueprint.route(route.posts.route_name, methods=route.posts.methods)
 @verify_request_middleware(route.posts.route_name)
 def posts(logged_user: LoggedUser | None, *args, **kwargs):
-    username = kwargs.get("username")
+    username: str = kwargs["username"]
     order_by = request.args.get("order_by")
     category = request.args.get("category")
     limit = request.args.get("limit", type=int, default=10)
@@ -48,112 +57,95 @@ def posts(logged_user: LoggedUser | None, *args, **kwargs):
     template = str(request.args.get("template", default="False")).lower() == "true"
     bookmark = str(request.args.get("bookmark", default="False")).lower() == "true"
     session_user_id: int | None = None if logged_user is None else logged_user.user_id
-    if not username:
-        return make_response({"error": "Invalid username"}, 400)
-    try:
-        return _user_posts(
-            username=username,
-            session_user_id=session_user_id,
-            limit=limit,
-            offset=offset,
-            fetch_template=template,
-            fetch_bookmarked=bookmark,
-        )
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+
+    return _user_posts(
+        username=username,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+        fetch_template=template,
+        fetch_bookmarked=bookmark,
+    )
 
 
-# /posts/liked-users
+# /posts/<int:post_id>/liked-users GET
 @posts_blueprint.route(
     route.posts_liked_users.route_name,
     methods=route.posts_liked_users.methods,
 )
 @verify_request_middleware(route.posts_liked_users.route_name)
 def post_liked_user(logged_user: LoggedUser | None, *args, **kwargs):
-    post_id = kwargs.get("post_id")
+    post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
     offset = request.args.get("offset", type=int, default=0)
     limit = request.args.get("limit", type=int, default=10)
     if session_user_id is None:
         # Only logged in users can see who liked a post
-        return make_response({"error": "User not logged in"}, 401)
-    if not isinstance(post_id, int):
-        return make_response({"error": "Invalid post ID"}, 400)
+        raise UnAuthorizedError("User not logged in")
     if limit >= 20:
-        return make_response({"error": "Limit must be less than or equal to 20"}, 400)
-    try:
-        return _get_post_liked_users(post_id, session_user_id, offset, limit)
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+        raise BadRequestError("Limit must be less than or equal to 20")
+
+    return _get_post_liked_users(post_id, session_user_id, offset, limit)
 
 
+# /posts/<int:post_id>/bookmarked-users GET
 @posts_blueprint.route(
     route.post_bookmarked_users.route_name,
     methods=route.post_bookmarked_users.methods,
 )
 @verify_request_middleware(route.post_bookmarked_users.route_name)
 def postBookmarkedUser(logged_user: LoggedUser | None, *args, **kwargs):
-    post_id = kwargs.get("post_id")
+    post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
     offset = request.args.get("offset", type=int, default=0)
     limit = request.args.get("limit", type=int, default=10)
     if limit >= 20:
-        return make_response({"error": "Limit must be less than or equal to 20"}, 400)
+        raise BadRequestError("Limit must be less than or equal to 20")
     if session_user_id is None:
         # Only logged in users can see who liked a post
-        return make_response({"error": "User not logged in"}, 401)
-    if not isinstance(post_id, int):
-        return make_response({"error": "Invalid post ID"}, 400)
-    try:
-        return _get_post_bookmarked_users(post_id, session_user_id, offset, limit)
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+        raise UnAuthorizedError("User not logged in")
+
+    return _get_post_bookmarked_users(post_id, session_user_id, offset, limit)
 
 
+# /posts/<int:post_id>/reposted-users GET
 @posts_blueprint.route(
     route.post_reposted_users.route_name,
     methods=route.post_reposted_users.methods,
 )
 @verify_request_middleware(route.post_reposted_users.route_name)
 def postRepostedUser(logged_user: LoggedUser | None, *args, **kwargs):
-    post_id = kwargs.get("post_id")
+    post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
     offset = request.args.get("offset", type=int, default=0)
     limit = request.args.get("limit", type=int, default=10)
     if limit >= 20:
-        return make_response({"error": "Limit must be less than or equal to 20"}, 400)
+        raise BadRequestError("Limit must be less than or equal to 20")
     if session_user_id is None:
         # Only logged in users can see who liked a post
-        return make_response({"error": "User not logged in"}, 401)
-    if not isinstance(post_id, int):
-        return make_response({"error": "Invalid post ID"}, 400)
-    try:
-        return _get_post_reposted_users(post_id, session_user_id, limit, offset)
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+        raise UnAuthorizedError("User not logged in")
+
+    return _get_post_reposted_users(post_id, session_user_id, limit, offset)
 
 
+# /posts/<int:post_id>/qouted-users GET
 @posts_blueprint.route(
     route.post_qouted_users.route_name,
     methods=route.post_qouted_users.methods,
 )
 @verify_request_middleware(route.post_qouted_users.route_name)
 def postReqoutedUser(logged_user: LoggedUser | None, *args, **kwargs):
-    post_id = kwargs.get("post_id")
+    post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
     offset = request.args.get("offset", type=int, default=0)
     limit = request.args.get("limit", type=int, default=10)
     if limit >= 20:
-        return make_response({"error": "Limit must be less than or equal to 20"}, 400)
+        raise BadRequestError("Limit must be less than or equal to 20")
     if session_user_id is None:
         # Only logged in users can see who liked a post
-        return make_response({"error": "User not logged in"}, 401)
-    if not isinstance(post_id, int):
-        return make_response({"error": "Invalid post ID"}, 400)
-    try:
-        return _get_post_reqouted_users(post_id, session_user_id, limit, offset)
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+        raise UnAuthorizedError("User not logged in")
+
+    return _get_post_reqouted_users(post_id, session_user_id, limit, offset)
 
 
 # /posts
@@ -170,13 +162,7 @@ def upload_posts(logged_user: LoggedUser, *args, **kwargs):
     parent_post_id = request.args.get("parent_post_id", default=None, type=int)
 
     if is_reply and not parent_post_id:
-        return make_response(
-            {
-                "error": "Parent post ID is required for reply to a post",
-                "message": "Bad request",
-            },
-            400,
-        )
+        raise BadRequestError("Parent post ID is required for reply to a post")
     try:
         # Handle files
         file = request.files.get(
@@ -251,7 +237,8 @@ def upload_posts(logged_user: LoggedUser, *args, **kwargs):
 
         if post_replying_to and not isinstance(json.loads(post_replying_to), list):
             return make_response(
-                {"error": "postReplyingTo must be a list of strings of usernames"}, 400
+                {"error": "post_replying_to must be a list of strings of usernames"},
+                400,
             )
         _create_post(
             user_id=session_user_id,
@@ -274,14 +261,12 @@ def upload_posts(logged_user: LoggedUser, *args, **kwargs):
         return make_response({"error": f"{e}"}, 500)
 
 
-# /posts/reposts
+# /posts/<int:post_id>/repost POST
 @posts_blueprint.route(route.post_repost.route_name, methods=route.post_repost.methods)
 @verify_request_middleware(route.post_repost.route_name)
 def repost_post(logged_user: LoggedUser, *args, **kwargs):
-    post_id = kwargs.get("post_id")
+    post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id
-    if post_id is None or not isinstance(post_id, int):
-        return make_response({"error": f"Invalid post ID {post_id} type"}, 400)
     return _repost_post(session_user_id=session_user_id, post_id=post_id)
 
 
@@ -290,18 +275,12 @@ def repost_post(logged_user: LoggedUser, *args, **kwargs):
 @verify_request_middleware(route.post_like.route_name)
 def post_toggle_like(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
+    post_id = kwargs["post_id"]
 
-    post_id = kwargs.get("post_id")
-    if post_id is None and not isinstance(post_id, int):
-        return make_response({"error": "Invalid post ID"}, 400)
-    try:
-        return _post_toggle_like(session_user_id=session_user_id, post_id=post_id)
-
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+    return _post_toggle_like(session_user_id=session_user_id, post_id=post_id)
 
 
-#
+# /posts/<int:post_id>/bookmark PUT
 @posts_blueprint.route(
     route.post_bookmark.route_name, methods=route.post_bookmark.methods
 )
@@ -309,102 +288,82 @@ def post_toggle_like(logged_user: LoggedUser, *agrs, **kwargs):
 def toggle_bookmark(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
 
-    post_id = kwargs.get("post_id")
-    if post_id is None and not isinstance(post_id, int):
-        return make_response({"error": "Invalid post ID"}, 400)
-    try:
-        return _post_toggle_bookmark(session_user_id=session_user_id, post_id=post_id)
+    post_id = kwargs["post_id"]
 
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+    return _post_toggle_bookmark(session_user_id=session_user_id, post_id=post_id)
 
 
-# /posts
+# /posts/<int:post_id> DELETE
 @posts_blueprint.route(route.post_delete.route_name, methods=route.post_delete.methods)
 @verify_request_middleware(route.post_delete.route_name)
 def delete_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    post_id = kwargs.get("post_id")
-    if post_id is None and not isinstance(post_id, int):
-        return make_response({"error": f"Invalid post_id {post_id} datatype"}, 400)
-    try:
-        _delete_post(session_user_id=session_user_id, post_id=post_id)
+    post_id = kwargs["post_id"]
 
-        return make_response({"message": "Post deleted successfully"}, 201)
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+    _delete_post(session_user_id=session_user_id, post_id=post_id)
+
+    return SuccessResponse(
+        message="Post deleted successfully", data={}, status_code=201
+    )
 
 
-# /posts PATCH
+# /posts/<int:post_id> PATCH
 @posts_blueprint.route(route.post_update.route_name, methods=route.post_update.methods)
 @verify_request_middleware(route.post_update.route_name)
 def update_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    post_id = kwargs.get("post_id")
-    if post_id is None and not isinstance(post_id, int):
-        return make_response({"error": f"Invalid post_id {post_id} datatype"}, 400)
-    try:
-        body = request.json
-        title = body.get("title")
-        tags = body.get("tags")
-        age_rating = body.get("age_rating")
-        category = body.get("category")
-        visibility = body.get("visibility")
+    post_id = kwargs["post_id"]
 
-        _update_post(
-            session_user_id=session_user_id,
-            post_id=post_id,
-            title=title,
-            tags=tags,
-            age_rating=age_rating,
-            category=category,
-            visibility=visibility,
-        )
+    body = request.json
+    title = body.get("title")
+    tags = body.get("tags")
+    age_rating = body.get("age_rating")
+    category = body.get("category")
+    visibility = body.get("visibility")
 
-        return make_response({"message": "Post updated successfully"}, 201)
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+    _update_post(
+        session_user_id=session_user_id,
+        post_id=post_id,
+        title=title,
+        tags=tags,
+        age_rating=age_rating,
+        category=category,
+        visibility=visibility,
+    )
+
+    return SuccessResponse(
+        message="Post updated successfully", data={}, status_code=200
+    )
 
 
 # /posts/<int:post_id> GET
 @posts_blueprint.route(
-    route.posts.route_name,
-    methods=route.posts.methods,
+    route.posts_by_id.route_name,
+    methods=route.posts_by_id.methods,
 )
-@verify_request_middleware(route.posts.route_name)
+@verify_request_middleware(route.posts_by_id.route_name)
 def postsByID(logged_user: LoggedUser | None = None, *args, **kwargs):
-    post_id = kwargs.get("post_id")
+    post_id = kwargs["post_id"]
     session_user_id: int | None = logged_user.user_id if logged_user else None
-    if not post_id or not isinstance(post_id, int):
-        return make_response({"error": "Missing post_id"}, 400)
-    try:
-        return _get_post_by_id_or_post_replies_by_id(
-            post_id=post_id, session_user_id=session_user_id
-        )
-    except Exception as e:
-        print(e)
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+
+    return _get_post_by_id_or_post_replies_by_id(
+        post_id=post_id, session_user_id=session_user_id
+    )
 
 
-# /posts/<int:post_id>/replies
+# /posts/<int:post_id>/replies GET
 @posts_blueprint.route(
     route.post_replies.route_name,
     methods=route.post_replies.methods,
 )
 @verify_request_middleware(route.post_replies.route_name)
 def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
-    post_id: int | None = kwargs.get("post_id")
-    if not post_id:
-        return make_response({"error": f"Invalid post id {post_id}"}, 400)
-    try:
-        return _get_post_by_id_or_post_replies_by_id(
-            post_id=post_id, fetch_replies=True
-        )
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+    post_id: int = kwargs["post_id"]
+
+    return _get_post_by_id_or_post_replies_by_id(post_id=post_id, fetch_replies=True)
 
 
-# /posts/<int:post_id>/report
+# /posts/<int:post_id>/report POST
 @posts_blueprint.route(
     route.report_post.route_name,
     methods=route.report_post.methods,
@@ -412,13 +371,7 @@ def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
 @verify_request_middleware(route.report_post.route_name)
 def reportPost(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    post_id: int | None = kwargs.get("post_id")
-    if not post_id:
-        return make_response({"error": f"Invalid post id {post_id}"}, 400)
-    try:
-        reason = request.get_json().get("reason")
-        return _reportPost(
-            session_user_id=session_user_id, post_id=post_id, reason=reason
-        )
-    except Exception as e:
-        return make_response({"error": str(e), "message": "Internal server error"}, 500)
+    post_id: int = kwargs["post_id"]
+
+    reason = request.get_json().get("reason")
+    return _reportPost(session_user_id=session_user_id, post_id=post_id, reason=reason)

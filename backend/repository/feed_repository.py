@@ -155,7 +155,7 @@ def _query_posts(
         return feed_obj
 
     except Exception as e:
-        raise Exception(e)
+        raise
 
 
 def _get_parent_post(post_id: int, session_user_id: int | None = None):

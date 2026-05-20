@@ -40,7 +40,7 @@ route = API_ENDPOINTS()
 @users_blueprint.route(f"{route.user.route_name}", methods=route.user.methods)
 @verify_request_middleware(route.user.route_name)
 def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwargs):
-    username: str | None = kwargs.get("username") or request.args.get("username")
+    username: str | None = kwargs["username"] or request.args.get("username")
     user_id = request.args.get("user_id")
     user_email: str | None = request.args.get("email_id")
 
@@ -140,7 +140,7 @@ def users_delete():
 @verify_request_middleware(route.user_remove_follower.route_name)
 def remove_follower(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    target_user_id: int = kwargs.get("user_id")
+    target_user_id: int = kwargs["user_id"]
     if target_user_id == session_user_id:
         raise ConflictError("User can't unfollow himself")
     else:
@@ -154,7 +154,7 @@ def remove_follower(logged_user: LoggedUser, *args, **kwargs):
 @verify_request_middleware(route.user_add_follower.route_name)
 def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
-    target_user_id = kwargs.get("user_id")
+    target_user_id = kwargs["user_id"]
 
     if target_user_id == session_user_id:
         raise ConflictError("User can't follow himself")
@@ -167,7 +167,7 @@ def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
 @verify_request_middleware(route.user_block.route_name)
 def block_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    target_user_id = kwargs.get("user_id")
+    target_user_id = kwargs["user_id"]
     if target_user_id == session_user_id:
         raise ConflictError("User can't block himself")
     return _block_user(session_user_id, target_user_id)
@@ -180,7 +180,7 @@ def block_user(logged_user: LoggedUser, *args, **kwargs):
 @verify_request_middleware(route.user_unblock.route_name)
 def unblock_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    target_user_id = kwargs.get("user_id")
+    target_user_id = kwargs["user_id"]
     if target_user_id == session_user_id:
         raise ConflictError("User can't block himself")
     return _unblock_user(session_user_id, target_user_id)
@@ -195,7 +195,7 @@ def unblock_user(logged_user: LoggedUser, *args, **kwargs):
 @verify_request_middleware(route.user_report_users.route_name)
 def report_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
-    target_user_id = kwargs.get("user_id")
+    target_user_id = kwargs["user_id"]
 
     reason = request.get_json().get("reason")
     return _report_user(session_user_id, target_user_id, reason or "")

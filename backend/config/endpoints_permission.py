@@ -172,6 +172,13 @@ class API_ENDPOINTS:
         methods=["GET"],
         partial_access=True,
     )
+    # Posts by Id
+    posts_by_id = RouteAccess(
+        route_name="/posts/<int:post_id>",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        methods=["GET"],
+        partial_access=True,
+    )
     posts_liked_users = RouteAccess(
         # Users who liked the post
         route_name="/posts/<int:post_id>/liked-users",
