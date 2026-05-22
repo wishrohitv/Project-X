@@ -11,9 +11,7 @@ class SuccessResponse(Response):
         status_code: int = 200,
         message: str = "Request successful",
     ):
-        body = json.dumps(
-            {"data": data, "message": message, "status_code": status_code}
-        )
+        body = json.dumps({"data": data, "message": message, "code": status_code})
 
         super().__init__(
             response=body,

@@ -257,7 +257,6 @@ def _login_user(username, email, password):
 def _refresh_tokens(refresh_token: str):
     session = SessionLocal()
     try:
-        print(refresh_token)
         decoded_data = decode_jwt_token(refresh_token)
         if not decoded_data:
             raise TokenExpiredError("Token expired, Please login again")

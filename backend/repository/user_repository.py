@@ -204,7 +204,7 @@ def _get_user_profile(
         if users:
             usersDict = [
                 {
-                    "id": user[0].id,
+                    "user_id": user[0].id,
                     "name": user[0].name,
                     "username": user[0].username,
                     "email": user[0].email if session_user_id == user[0].id else "",
