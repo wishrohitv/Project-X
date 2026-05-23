@@ -63,7 +63,7 @@ def verify_request_middleware(endpoint: str):
             elif apiEndpointsPartialAccess.get(endpoint):
                 # Give user partial access
                 return func(
-                    loggedUser=None,
+                    logged_user=None,
                     *args,
                     **kwargs,
                 )

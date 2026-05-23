@@ -96,7 +96,7 @@ def post_liked_user(logged_user: LoggedUser | None, *args, **kwargs):
     methods=route.post_bookmarked_users.methods,
 )
 @verify_request_middleware(route.post_bookmarked_users.route_name)
-def postBookmarkedUser(logged_user: LoggedUser | None, *args, **kwargs):
+def post_bookmarked_user(logged_user: LoggedUser | None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
     offset = request.args.get("offset", type=int, default=0)
@@ -268,7 +268,7 @@ def post_toggle_like(logged_user: LoggedUser, *agrs, **kwargs):
     return _post_toggle_like(session_user_id=session_user_id, post_id=post_id)
 
 
-# /posts/<int:post_id>/bookmark PUT
+# /posts/<int:post_id>/bookmark POST
 @posts_blueprint.route(
     route.post_bookmark.route_name, methods=route.post_bookmark.methods
 )
@@ -330,7 +330,7 @@ def update_post(logged_user: LoggedUser, *args, **kwargs):
     methods=route.posts_by_id.methods,
 )
 @verify_request_middleware(route.posts_by_id.route_name)
-def postsByID(logged_user: LoggedUser | None = None, *args, **kwargs):
+def posts_by_id(logged_user: LoggedUser | None = None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id: int | None = logged_user.user_id if logged_user else None
 

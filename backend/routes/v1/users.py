@@ -92,6 +92,8 @@ def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
 
     file = request.files["file"]
+    if not file:
+        raise BadRequestError("No file provided")
     file.seek(0, 2)  # move to end of file
     size = file.tell()  # get current position, which is file size in bytes
     file.seek(0)  # reset file pointer

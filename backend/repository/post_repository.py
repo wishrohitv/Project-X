@@ -287,7 +287,7 @@ def _update_post(
 
         update_value = {}
         if title:
-            update_value["title"] = title
+            update_value["text"] = title
         if tags:
             update_value["tags"] = tags
         if age_rating:
@@ -301,6 +301,7 @@ def _update_post(
         session.execute(stmt)
         session.commit()
     except AppError:
+        session.rollback()
         raise
     except Exception as e:
         session.rollback()
@@ -354,8 +355,9 @@ def _user_posts(
             limit=limit,
             session_user_id=session_user_id,
         )
+
         return SuccessResponse(
-            data=json.dumps(posts), message="Fetched user's post", status_code=200
+            data=posts, message="Fetched user's post", status_code=200
         )
     except AppError:
         raise

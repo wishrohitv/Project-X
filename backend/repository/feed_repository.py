@@ -136,7 +136,7 @@ def _query_posts(
                 )
                 if not feed[1].is_reply
                 else None,  # Check if post's 'is_reply=True' send None because
-                "created_at": feed[1].created_at,
+                "created_at": feed[1].created_at.isoformat(),
                 "age_rating": feed[
                     1
                 ].age_rating.value,  # Return Enum class from db and get its value from 'age_rating': <PostAgeRating.pg13: 'pg13'>,
@@ -144,10 +144,10 @@ def _query_posts(
                 "is_template": feed[1].is_template,
                 "post_media_url": feed[1].media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL}{url_for('ppost_media.serve_post_media', fileName=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
+                else f"{API_ROOT_URL}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
                 "profile_img_url": feed[2]
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL}{url_for('profileImage.serveImage', fileName=f'{feed[3]}.{feed[4]}')}",
+                else f"{API_ROOT_URL}{url_for('return_assets.serve_image', filename=f'{feed[3]}.{feed[4]}')}",
                 "like_count": feed[5],
                 "repost_count": feed[6],
                 "bookmark_count": feed[7],

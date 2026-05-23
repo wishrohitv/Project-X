@@ -7,7 +7,7 @@ from flask import Response
 class SuccessResponse(Response):
     def __init__(
         self,
-        data: str | Dict[str, Any],
+        data: str | Dict[str, Any] | list[Any],
         status_code: int = 200,
         message: str = "Request successful",
     ):

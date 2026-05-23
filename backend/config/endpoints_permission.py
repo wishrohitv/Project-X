@@ -101,13 +101,13 @@ class API_ENDPOINTS:
     )
     user_add_follower = RouteAccess(
         # Follow a user
-        route_name="/users/<int:user_id>/follower",
+        route_name="/users/<int:user_id>/follow",
         role_permission=[ROLE.USER],
         methods=["POST"],
     )
     user_remove_follower = RouteAccess(
         # Unfollow a user
-        route_name="/users/<int:user_id>/follower",
+        route_name="/users/<int:user_id>/follow",
         role_permission=[ROLE.USER],
         methods=["DELETE"],
     )
@@ -241,7 +241,7 @@ class API_ENDPOINTS:
         # Bookmark a post
         route_name="/posts/<int:post_id>/bookmark",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
-        methods=["PUT"],
+        methods=["POST"],
     )
     post_bookmark_undo = RouteAccess(
         # Undo bookmark of a post
