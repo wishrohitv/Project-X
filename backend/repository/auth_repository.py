@@ -1,4 +1,4 @@
-from database import SessionLocal, engine, redis_client
+from database import SessionLocal, redis_client
 from models import (
     AccountStatus,
     Profile,
@@ -153,7 +153,7 @@ def _signup_user(
             "name": new_user.name,
             "username": new_user.username,
             "email": new_user.email,
-            "join_date": new_user.created_at,
+            "join_date": new_user.created_at.isoformat(),
             "role": new_user.role,
             "account_status": new_user.account_status.value,
         }

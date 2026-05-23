@@ -100,7 +100,7 @@ def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
         raise BadRequestError("Invalid file type")
     if size > ALLOWED_PROFILE_FILE_SIZE.get(file.mimetype):
         raise BadRequestError(
-            f"File size exceeds limit, Please upload a smaller file below {ALLOWED_PROFILE_FILE_SIZE.get(file.mimetype) / 1024 / 1024} MB."
+            f"File size exceeds limit, Please upload a smaller file below {ALLOWED_PROFILE_FILE_SIZE[file.mimetype] / 1024 / 1024} MB."
         )
 
     file_extension = file.filename.split(".")[-1]
