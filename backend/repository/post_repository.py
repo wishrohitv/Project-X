@@ -23,6 +23,7 @@ from modules import (
     make_response,
     or_,
     os,
+    request,
     select,
     sessionmaker,
     update,
@@ -577,7 +578,7 @@ def _fetch_post_users(
                 "name": user.name,
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL}{url_for('return_assets.serve_image', file_name=f'{user.media_public_id}.{user.file_extension}')}",
+                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', file_name=f'{user.media_public_id}.{user.file_extension}')}",
                 "media_public_id": user.media_public_id,
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,

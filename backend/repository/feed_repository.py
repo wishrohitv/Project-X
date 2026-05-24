@@ -144,10 +144,10 @@ def _query_posts(
                 "is_template": feed[1].is_template,
                 "post_media_url": feed[1].media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
+                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
                 "profile_img_url": feed[2]
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL}{url_for('return_assets.serve_image', filename=f'{feed[3]}.{feed[4]}')}",
+                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{feed[3]}.{feed[4]}')}",
                 "like_count": feed[5],
                 "repost_count": feed[6],
                 "bookmark_count": feed[7],
@@ -220,10 +220,10 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
             ].age_rating.value,  # Return Enum class from db and get its value from
             "post_media_url": result[1].media_url
             if USE_CLOUDINARY_STORAGE
-            else f"{API_ROOT_URL}{url_for('ppost_media.serve_post_media', fileName=f'{result[1].media_public_id}.{result[1].file_extension}')}",
+            else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_post_media', fileName=f'{result[1].media_public_id}.{result[1].file_extension}')}",
             "profileImgUrl": result[2]
             if USE_CLOUDINARY_STORAGE
-            else f"{API_ROOT_URL}{url_for('profileImage.serveImage', fileName=f'{result[3]}.{result[4]}')}",
+            else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', fileName=f'{result[3]}.{result[4]}')}",
         }
         return {"payload": post}
     except Exception as e:

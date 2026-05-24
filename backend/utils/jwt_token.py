@@ -2,7 +2,7 @@ from typing import Any
 
 from modules import JWT_HASH_KEY, datetime, jwt, timedelta
 
-from . import BadRequestError
+from . import TokenExpiredError
 
 
 def decode_jwt_token(client_token):
@@ -10,7 +10,7 @@ def decode_jwt_token(client_token):
         data = jwt.decode(jwt=client_token, key=JWT_HASH_KEY, algorithms="HS256")
         return data
     except jwt.ExpiredSignatureError as e:
-        raise BadRequestError("Token has expired")
+        raise TokenExpiredError("Token has expired")
 
 
 def generate_jwt_token(user_data: dict[str, Any], expire_in_minute: int):

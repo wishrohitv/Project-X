@@ -25,6 +25,7 @@ from modules import (
     make_response,
     or_,
     os,
+    request,
     select,
     sessionmaker,
     update,
@@ -215,7 +216,7 @@ def _get_user_profile(
                     "country": user[2],
                     "profile_img_url": user[3]
                     if USE_CLOUDINARY_STORAGE
-                    else f"{API_ROOT_URL}{url_for('return_assets.serve_image', filename=f'{user[4]}.{user[5]}')}",
+                    else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[4]}.{user[5]}')}",
                     "follower_count": user[6],
                     "following_count": user[7],
                     "is_following": user[8],

@@ -1,3 +1,5 @@
+from flask import request
+
 # App name
 APP_NAME: str = "Meme Store"
 
@@ -67,7 +69,7 @@ HOST: str = "0.0.0.0"
 PUBLIC_DIRECTORY_PROFILES: str = "./public/profiles"
 PUBLIC_DIRECTORY_POSTS: str = "./public/posts"
 
-API_ROOT_URL: str = "http://127.0.0.1:5000"
+API_ROOT_URL: str | None = None  # Domain name
 
 LOGGING_PATH: str = "./logs"
 
