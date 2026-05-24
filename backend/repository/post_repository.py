@@ -577,7 +577,7 @@ def _fetch_post_users(
                 "name": user.name,
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL}{url_for('profileImage.serveImage', file_name=f'{user.media_public_id}.{user.file_extension}')}",
+                else f"{API_ROOT_URL}{url_for('return_assets.serve_image', file_name=f'{user.media_public_id}.{user.file_extension}')}",
                 "media_public_id": user.media_public_id,
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,
@@ -590,5 +590,40 @@ def _fetch_post_users(
         )
     except Exception as e:
         raise
+    finally:
+        session.close()
+
+
+def _mark_post_as_template(session_user_id: int, post_id: int):
+    session = SessionLocal()
+    try:
+        post = (
+            session.query(Posts)
+            .filter_by(
+                id=post_id,
+                user_id=session_user_id,
+            )
+            .first()
+        )
+        if not post:
+            raise ResourceNotFoundError("Post not found")
+        if post.is_template:
+            post.is_template = False
+        else:
+            post.is_template = True
+        session.commit()
+        session.refresh(post)
+
+        return SuccessResponse(
+            data={"is_template": post.is_template},
+            message="Post marked as template"
+            if post.is_template
+            else "Post unmarked as template",
+            status_code=200,
+        )
+    except AppError:
+        raise
+    except Exception as e:
+        raise InternalServerError("Error while marking post as template") from e
     finally:
         session.close()

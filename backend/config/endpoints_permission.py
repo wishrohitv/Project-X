@@ -282,13 +282,14 @@ class API_ENDPOINTS:
         partial_access=True,
     )
     # Mark post as meme template
-    mark_as_template = RouteAccess(
+    post_mark_as_template = RouteAccess(
         # Mark post as meme template
         route_name="/posts/<int:post_id>/template",
         role_permission=[ROLE.USER],
-        methods=["PUT"],
+        methods=["POST"],
     )
-    remove_template = RouteAccess(
+    # Unmark post as meme template
+    post_unmark_as_template = RouteAccess(
         route_name="/posts/<int:post_id>/template",
         role_permission=[ROLE.USER],
         methods=["DELETE"],

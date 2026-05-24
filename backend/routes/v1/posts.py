@@ -21,6 +21,7 @@ from repository.post_repository import (
     _get_post_liked_users,
     _get_post_reposted_users,
     _get_post_reqouted_users,
+    _mark_post_as_template,
     _post_toggle_bookmark,
     _post_toggle_like,
     _report_post,
@@ -252,7 +253,18 @@ def upload_posts(logged_user: LoggedUser, *args, **kwargs):
 # /posts/<int:post_id>/repost POST
 @posts_blueprint.route(route.post_repost.route_name, methods=route.post_repost.methods)
 @verify_request_middleware(route.post_repost.route_name)
-def repost_post(logged_user: LoggedUser, *args, **kwargs):
+def post_repost(logged_user: LoggedUser, *args, **kwargs):
+    post_id = kwargs["post_id"]
+    session_user_id = logged_user.user_id
+    return _repost_post(session_user_id=session_user_id, post_id=post_id)
+
+
+# /posts/<int:post_id>/repost DELETE
+@posts_blueprint.route(
+    route.post_repost_undo.route_name, methods=route.post_repost_undo.methods
+)
+@verify_request_middleware(route.post_repost_undo.route_name)
+def post_repost_undo(logged_user: LoggedUser, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id
     return _repost_post(session_user_id=session_user_id, post_id=post_id)
@@ -261,7 +273,19 @@ def repost_post(logged_user: LoggedUser, *args, **kwargs):
 # /posts/<int:post_id>/like POST
 @posts_blueprint.route(route.post_like.route_name, methods=route.post_like.methods)
 @verify_request_middleware(route.post_like.route_name)
-def post_toggle_like(logged_user: LoggedUser, *agrs, **kwargs):
+def post_like(logged_user: LoggedUser, *agrs, **kwargs):
+    session_user_id = logged_user.user_id
+    post_id = kwargs["post_id"]
+
+    return _post_toggle_like(session_user_id=session_user_id, post_id=post_id)
+
+
+# /posts/<int:post_id>/like DELETE
+@posts_blueprint.route(
+    route.post_like_undo.route_name, methods=route.post_like_undo.methods
+)
+@verify_request_middleware(route.post_like_undo.route_name)
+def post_like_undo(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
     post_id = kwargs["post_id"]
 
@@ -273,12 +297,52 @@ def post_toggle_like(logged_user: LoggedUser, *agrs, **kwargs):
     route.post_bookmark.route_name, methods=route.post_bookmark.methods
 )
 @verify_request_middleware(route.post_bookmark.route_name)
-def toggle_bookmark(logged_user: LoggedUser, *agrs, **kwargs):
+def post_bookmark(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
 
     post_id = kwargs["post_id"]
 
     return _post_toggle_bookmark(session_user_id=session_user_id, post_id=post_id)
+
+
+# /posts/<int:post_id>/bookmark POST
+@posts_blueprint.route(
+    route.post_bookmark_undo.route_name, methods=route.post_bookmark_undo.methods
+)
+@verify_request_middleware(route.post_bookmark_undo.route_name)
+def post_bookmark_undo(logged_user: LoggedUser, *agrs, **kwargs):
+    session_user_id = logged_user.user_id
+
+    post_id = kwargs["post_id"]
+
+    return _post_toggle_bookmark(session_user_id=session_user_id, post_id=post_id)
+
+
+# /posts/<int:post_id>/template POST
+@posts_blueprint.route(
+    route.post_mark_as_template.route_name, methods=route.post_mark_as_template.methods
+)
+@verify_request_middleware(route.post_mark_as_template.route_name)
+def post_mark_as_template(logged_user: LoggedUser, *agrs, **kwargs):
+    session_user_id = logged_user.user_id
+
+    post_id = kwargs["post_id"]
+
+    return _mark_post_as_template(session_user_id=session_user_id, post_id=post_id)
+
+
+# /posts/<int:post_id>/template DELETE
+@posts_blueprint.route(
+    route.post_unmark_as_template.route_name,
+    methods=route.post_unmark_as_template.methods,
+)
+@verify_request_middleware(route.post_unmark_as_template.route_name)
+def post_unmark_as_template(logged_user: LoggedUser, *agrs, **kwargs):
+    session_user_id = logged_user.user_id
+
+    post_id = kwargs["post_id"]
+
+    return _mark_post_as_template(session_user_id=session_user_id, post_id=post_id)
 
 
 # /posts/<int:post_id> DELETE
