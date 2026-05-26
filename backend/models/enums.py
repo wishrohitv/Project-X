@@ -28,6 +28,7 @@ class NotificationType(PyEnum.Enum):
 
 # OAuth providers
 class OAuthProvider(PyEnum.Enum):
+    local = "local"
     google = "google"
     x = "x"
     discord = "discord"

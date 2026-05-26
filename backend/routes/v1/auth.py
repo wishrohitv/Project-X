@@ -137,7 +137,7 @@ def verify():
 
 # /auth/c/user sessionUser only
 @auth_blueprint.route(
-    f"{route.auth_current_user.route_name}", methods=route.auth_current_user.methods
+    route.auth_current_user.route_name, methods=route.auth_current_user.methods
 )
 @verify_request_middleware(route.auth_current_user.route_name)
 def userSessionInfo(logged_user: LoggedUser, *args, **kwargs):

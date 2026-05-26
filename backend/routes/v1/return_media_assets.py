@@ -90,6 +90,4 @@ def serve_image(filename):
         )
     else:
         Log.warning(f"userProfile {filename} not found, Sending default image")
-        return send_from_directory(
-            PUBLIC_DIRECTORY_PROFILES.replace("/backend", ""), "icon"
-        )
+        return send_from_directory(PUBLIC_DIRECTORY_PROFILES, "icon")
