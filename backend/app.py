@@ -53,6 +53,9 @@ def run_app():
     # Blueprint for posts, profile media content of user
     from routes.v1.return_media_assets import return_media_assets_blueprint
 
+    # Blueprint for search
+    from routes.v1.search import search_blueprint
+
     # Blueprint for user profile data
     from routes.v1.users import users_blueprint
 
@@ -63,6 +66,7 @@ def run_app():
     app.register_blueprint(feed_blueprint, url_prefix="/api/v1")
     app.register_blueprint(collection_blueprint, url_prefix="/api/v1")
     app.register_blueprint(notification_blueprint, url_prefix="/api/v1")
+    app.register_blueprint(search_blueprint, url_prefix="/api/v1")
 
     # Register handler for the custom exception
 
