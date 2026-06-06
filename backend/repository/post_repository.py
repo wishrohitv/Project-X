@@ -30,7 +30,8 @@ from modules import (
     url_for,
 )
 from services.cloudinary_service import delete_media
-from tasks import add_task_in_queue, like, mention, reply
+from tasks import add_task_in_queue
+from tasks.interface import like, mention, reply
 from utils import (
     AppError,
     BadRequestError,

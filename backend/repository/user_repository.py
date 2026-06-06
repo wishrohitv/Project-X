@@ -34,7 +34,8 @@ from modules import (
 )
 from services.cloudinary_service import delete_media
 from services.mail_service import send_otp
-from tasks import add_task_in_queue, follow
+from tasks import add_task_in_queue
+from tasks.interface import follow
 from utils import (
     AppError,
     BadRequestError,
