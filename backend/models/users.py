@@ -2,6 +2,7 @@ from modules import (
     TIMESTAMP,
     Enum,
     ForeignKey,
+    LargeBinary,
     List,
     Mapped,
     Optional,
@@ -13,7 +14,7 @@ from modules import (
 from utils import datetime_utc
 
 from .base import Base
-from .enums import AccountStatus
+from .enums import AccountStatus, Provider
 from .profile import Profile
 
 
@@ -23,7 +24,8 @@ class Users(Base):
     name: Mapped[str] = mapped_column(String(30))
     username: Mapped[str] = mapped_column(String(40))
     email: Mapped[str] = mapped_column(String(40))
-    password: Mapped[bytes]
+    password: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
+    provider: Mapped[Provider] = mapped_column(Enum(Provider), default=Provider.local)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True), nullable=False, default=datetime_utc()
     )

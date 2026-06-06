@@ -24,10 +24,11 @@ class NotificationType(PyEnum.Enum):
     danger = "danger"
     systemUpdate = "system_update"
     follow = "follow"
+    like = "like"
 
 
 # OAuth providers
-class OAuthProvider(PyEnum.Enum):
+class Provider(PyEnum.Enum):
     local = "local"
     google = "google"
     x = "x"

@@ -209,6 +209,25 @@ def follow(user_id: int, follower_user_id: int) -> None:
         session.close()
 
 
+def like(user_id: int, follower_user_id: int) -> None:
+    session = SessionLocal()
+    try:
+        user = session.query(Users).filter(Users.id == user_id).first()
+        if user is None:
+            return
+        notic = {
+            "follower": user.username,
+            "alert": "New like",
+            "text": f"{user.username} liked your post.",
+        }
+        _create_notification(user_id, notic, NotificationType.like)
+    except Exception as e:
+        Log.critical(str(e))
+        raise Exception(str(e))
+    finally:
+        session.close()
+
+
 def warning(text: str) -> None:
     # TODO: Implement the warning notification logic
     notice = {
