@@ -11,8 +11,8 @@ backend/public/posts
 backend/public/profiles
 
 # Migration file
-alembic.ini
-alembic
+**/alembic.ini
+**/alembic
 
 # Env file
 .env

@@ -1,5 +1,5 @@
 from database import SessionLocal
-from models import Users
+from models import Posts, Users
 from models.enums import NotificationType
 from modules import sessionmaker
 from repository.notification_repository import _create_notification
@@ -193,11 +193,11 @@ def reply(
 def follow(user_id: int, follower_user_id: int) -> None:
     session = SessionLocal()
     try:
-        user = session.query(Users).filter(Users.id == user_id).first()
+        user = session.query(Users).filter(Users.id == follower_user_id).first()
         if user is None:
             return
         notic = {
-            "follower": user.username,
+            "user": user.username,
             "alert": "New follower",
             "text": f"{user.username} started following you.",
         }
@@ -209,18 +209,31 @@ def follow(user_id: int, follower_user_id: int) -> None:
         session.close()
 
 
-def like(user_id: int, follower_user_id: int) -> None:
+def like(post_id: int, session_user_id: int) -> None:
     session = SessionLocal()
     try:
-        user = session.query(Users).filter(Users.id == user_id).first()
+        user = session.query(Users).filter(Users.id == session_user_id).first()
         if user is None:
             return
+
+        post = session.query(Posts).filter(Posts.id == post_id).first()
+        if post is None:
+            return
+        preview_text = ""
+        if post.text is not None:
+            if len(post.text) > 150:
+                preview_text = post.text[150]
         notic = {
-            "follower": user.username,
-            "alert": "New like",
-            "text": f"{user.username} liked your post.",
+            # Username of who liked the post
+            "user": user.username,
+            # alert message
+            "alert": f"{user.username} liked your post.",
+            # Post content text
+            "text": preview_text,  # Short preview of the text,
+            # post id of the post
+            "post_id": post_id,
         }
-        _create_notification(user_id, notic, NotificationType.like)
+        _create_notification(post.user_id, notic, NotificationType.like)
     except Exception as e:
         Log.critical(str(e))
         raise Exception(str(e))

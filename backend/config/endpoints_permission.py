@@ -76,6 +76,14 @@ class API_ENDPOINTS:
         methods=["GET"],
         partial_access=True,
     )
+
+    user_avatar = RouteAccess(
+        # Get user avatar
+        route_name="/users/<string:username>/avatar",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER, ROLE.GUEST],
+        methods=["GET"],
+        partial_access=True,
+    )
     user_update = RouteAccess(
         route_name="/users",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],

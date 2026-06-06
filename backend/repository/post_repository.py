@@ -30,7 +30,7 @@ from modules import (
     url_for,
 )
 from services.cloudinary_service import delete_media
-from tasks import add_task_in_queue, mention, reply
+from tasks import add_task_in_queue, like, mention, reply
 from utils import (
     AppError,
     BadRequestError,
@@ -133,7 +133,8 @@ def _post_toggle_like(session_user_id: int, post_id: int):
             like_post = Likes(post_id=post_id, user_id=session_user_id)
             session.add(like_post)
             session.commit()
-            session.close()
+            # Notify the post owner
+            add_task_in_queue(functools.partial(like, post_id, session_user_id))
             return SuccessResponse(
                 data={"is_liked": True},
                 message="Post liked successfully",
