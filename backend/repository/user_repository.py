@@ -26,6 +26,7 @@ from modules import (
     make_response,
     or_,
     os,
+    redirect,
     request,
     select,
     sessionmaker,
@@ -429,5 +430,38 @@ def _report_user(session_user_id: int, user_id: int, reason: str):
     except Exception as e:
         session.rollback()
         raise InternalServerError("Error while reporting user") from e
+    finally:
+        session.close()
+
+
+def _get_user_avatar(username: str):
+    session = SessionLocal()
+    try:
+        user = (
+            session.query(
+                Users.username,
+                Profile.media_url,
+                Profile.media_public_id,
+                Profile.file_extension,
+                Profile.file_type,
+            )
+            .join(Profile, Profile.user_id == Users.id)
+            .filter(Users.username == username)
+            .first()
+        )
+        if not user:
+            return redirect(
+                url_for("return_assets.serve_image", filename=f"{None}.{None}")
+            )
+
+        return redirect(
+            user[1]
+            if USE_CLOUDINARY_STORAGE
+            else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[2]}.{user[3]}')}"
+        )
+    except AppError:
+        raise
+    except Exception as e:
+        raise InternalServerError("Error while fetching user avatar") from e
     finally:
         session.close()

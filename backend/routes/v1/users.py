@@ -15,6 +15,7 @@ from modules import (
 from repository.user_repository import (
     _add_follower,
     _block_user,
+    _get_user_avatar,
     _get_user_profile,
     _remove_follower,
     _report_user,
@@ -201,3 +202,12 @@ def report_user(logged_user: LoggedUser, *args, **kwargs):
 
     reason = request.get_json().get("reason")
     return _report_user(session_user_id, target_user_id, reason or "")
+
+
+# /users/<string:username>/avatar GET
+@users_blueprint.route(
+    route.user_avatar.route_name,
+    methods=route.user_avatar.methods,
+)
+def send_avatar_url(username: str):
+    return _get_user_avatar(username)
