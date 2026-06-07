@@ -1,6 +1,10 @@
 from config import API_ENDPOINTS
 from modules import Blueprint, request
-from repository.search_repository import _search_prediction
+from repository.search_repository import (
+    _search_by_posts,
+    _search_by_users,
+    _search_prediction,
+)
 from utils import BadRequestError, SuccessResponse
 
 search_blueprint = Blueprint("search", __name__)
@@ -8,21 +12,29 @@ search_blueprint = Blueprint("search", __name__)
 route = API_ENDPOINTS()
 
 
+# /search GET
 @search_blueprint.route(route.search.route_name, methods=route.search.methods)
 def search():
     query = request.args.get("q")
-    limit = request.args.get("limit", default=10)
-    offset = request.args.get("offset", default=0)
+    limit = request.args.get("limit", default=10, type=int)
+    offset = request.args.get("offset", default=0, type=int)
     filter_by = request.args.get("filter_by", default="all")
-
+    if not query or query.strip() == "":
+        raise BadRequestError("No search query found")
     if filter_by not in ["people", "post", "all"]:
         raise BadRequestError("Invalid filter flag")
-    if int(limit) > 15 or int(offset) > 10:
-        raise BadRequestError("Invalid limit or offset")
+    if limit > 10 or offset > 10:
+        raise BadRequestError(
+            "Invalid limit or offset, limit can't be greater than 10 and offset 10"
+        )
+    if filter_by == "people":
+        return _search_by_users(query, limit, offset)
+    if filter_by == "post":
+        return _search_by_posts(query, limit, offset)
+    return _search_prediction(query)
 
-    return SuccessResponse(data={}, message="Fetch data successfully", status_code=200)
 
-
+# /search/suggestion GET
 @search_blueprint.route(
     route.search_suggestion.route_name, methods=route.search_suggestion.methods
 )
@@ -33,6 +45,7 @@ def search_predict():
     return _search_prediction(query)
 
 
+# /trending GET
 @search_blueprint.route(route.trending.route_name, methods=route.trending.methods)
 def trending():
     """
@@ -42,6 +55,7 @@ def trending():
     return SuccessResponse(data={}, message="Fetch data successfully", status_code=200)
 
 
+# /trending/<string:hash_tag>/post GET
 @search_blueprint.route(
     route.trending_posts.route_name, methods=route.trending_posts.methods
 )
