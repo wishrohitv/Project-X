@@ -1,8 +1,49 @@
 from database import SessionLocal
 from models import Posts, Profile, Users
-from modules import select
+from modules import (
+    API_ROOT_URL,
+    USE_CLOUDINARY_STORAGE,
+    and_,
+    or_,
+    request,
+    select,
+    url_for,
+)
+from utils import BadRequestError, InternalServerError, SuccessResponse
 
 
 def _search_prediction(text: str):
+    value = f"%{text}%"
     session = SessionLocal()
-    stmt = select(Users.id, Users.name, Users.username)
+    try:
+        stmt = (
+            select(
+                Users.username,
+                Users.name,
+                Profile.media_url,
+                Profile.media_public_id,
+                Profile.file_extension,
+            )
+            .join(Profile, Users.id == Profile.user_id)
+            .where(or_(Users.username.ilike(value), Users.name.ilike(value)))
+            .limit(20)
+        )
+        result = session.execute(stmt).all()
+        matched_users = [
+            {
+                "username": user[0],
+                "name": user[1],
+                "profile_img_url": [2]
+                if USE_CLOUDINARY_STORAGE
+                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[3]}.{user[4]}')}",
+            }
+            for user in result
+        ]
+
+        return SuccessResponse(
+            data=matched_users, message="Fetch data successfully", status_code=200
+        )
+    except Exception as e:
+        raise InternalServerError("Error while predicting search") from e
+    finally:
+        session.close()

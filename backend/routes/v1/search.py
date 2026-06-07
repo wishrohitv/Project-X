@@ -28,10 +28,9 @@ def search():
 )
 def search_predict():
     query = request.args.get("q")
-    if not query:
+    if not query or query.strip() == "":
         raise BadRequestError("No search query found")
-    _search_prediction(query)
-    return SuccessResponse(data={}, message="Fetch data successfully", status_code=200)
+    return _search_prediction(query)
 
 
 @search_blueprint.route(route.trending.route_name, methods=route.trending.methods)

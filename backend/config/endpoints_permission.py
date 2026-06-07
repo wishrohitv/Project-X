@@ -361,7 +361,7 @@ class API_ENDPOINTS:
     )
 
     search_suggestion = RouteAccess(
-        route_name="/trending/suggestion",
+        route_name="/search/suggestion",
         role_permission=[ROLE.USER, ROLE.SUPER_ADMIN, ROLE.MODERATOR],
         methods=["GET"],
     )
