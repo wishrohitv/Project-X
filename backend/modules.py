@@ -87,9 +87,10 @@ from sqlalchemy import (
     func,
     or_,
     select,
+    text,
     update,
 )
-from sqlalchemy.dialects.postgresql import JSONB
+from sqlalchemy.dialects.postgresql import JSONB, TSVECTOR
 from sqlalchemy.engine import create_engine
 from sqlalchemy.orm import (
     DeclarativeBase,

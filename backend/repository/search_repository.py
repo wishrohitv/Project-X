@@ -2,11 +2,13 @@ from database import SessionLocal
 from models import Posts, Profile, Users
 from modules import (
     API_ROOT_URL,
+    TSVECTOR,
     USE_CLOUDINARY_STORAGE,
     and_,
     or_,
     request,
     select,
+    text,
     url_for,
 )
 from utils import BadRequestError, InternalServerError, SuccessResponse
@@ -105,3 +107,32 @@ def _search_prediction(text: str):
         raise InternalServerError("Error while predicting search") from e
     finally:
         session.close()
+
+
+def _trending_hashtags():
+    session = SessionLocal()
+    try:
+        stmt = """
+        SELECT
+            word,
+            ndoc
+        FROM ts_stat(
+            'SELECT to_tsvector(''english'', text) FROM posts'
+        )
+        ORDER BY ndoc DESC
+        LIMIT 20;
+        """
+        result = session.execute(text(stmt)).all()
+
+        trending_hashtags = [{"word": row[0], "occur": row[1]} for row in result]
+        return SuccessResponse(
+            data=trending_hashtags, message="Fetch data successfully", status_code=200
+        )
+    except Exception as e:
+        raise InternalServerError("Error while fetching trending hashtags") from e
+    finally:
+        session.close()
+
+
+def _posts_by_hashtag(hashtag: str, limit: int = 10, offset: int = 0):
+    return _search_by_posts(hashtag, limit, offset)

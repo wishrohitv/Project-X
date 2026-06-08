@@ -1,9 +1,11 @@
 from config import API_ENDPOINTS
 from modules import Blueprint, request
 from repository.search_repository import (
+    _posts_by_hashtag,
     _search_by_posts,
     _search_by_users,
     _search_prediction,
+    _trending_hashtags,
 )
 from utils import BadRequestError, SuccessResponse
 
@@ -48,11 +50,12 @@ def search_predict():
 # /trending GET
 @search_blueprint.route(route.trending.route_name, methods=route.trending.methods)
 def trending():
+    # TODO: Fetch trending hashtags(text prefix with #) by filtering post text
     """
     Trending hashtags
     Fetch trending hashtags by filtering post text
     """
-    return SuccessResponse(data={}, message="Fetch data successfully", status_code=200)
+    return _trending_hashtags()
 
 
 # /trending/<string:hash_tag>/post GET
@@ -67,7 +70,7 @@ def trending_posts(hash_tag: str):
     limit = request.args.get("limit", default=10)
     offset = request.args.get("offset", default=0)
 
-    if int(limit) > 15 or int(offset) > 10:
+    if int(limit) > 10 or int(offset) > 10:
         raise BadRequestError("Invalid limit or offset")
 
-    return SuccessResponse(data={}, message="Fetch data successfully", status_code=200)
+    return _posts_by_hashtag(hash_tag, int(limit), int(offset))

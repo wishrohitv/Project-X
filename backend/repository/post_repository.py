@@ -32,6 +32,7 @@ from modules import (
 from services.cloudinary_service import delete_media
 from tasks import add_task_in_queue
 from tasks.interface import like, mention, reply
+from tasks.interface import repost as repost_interface
 from utils import (
     AppError,
     BadRequestError,
@@ -245,6 +246,13 @@ def _repost_post(post_id: int, session_user_id: int):
             )
             session.execute(stmt)
             session.commit()
+            add_task_in_queue(
+                functools.partial(
+                    repost_interface,
+                    post_id=post_id,
+                    session_user_id=session_user_id,
+                )
+            )
             return SuccessResponse(
                 data={"is_reposted": False},
                 message="Post repost removed successfully",

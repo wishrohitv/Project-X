@@ -1,7 +1,6 @@
 from database import SessionLocal
 from models import Posts, Users
 from models.enums import NotificationType
-from modules import sessionmaker
 from repository.notification_repository import _create_notification
 from utils import Log, get_usernames
 
@@ -68,11 +67,13 @@ def mention(
 
 def suggestion(
     post_id: int,
+    author: str,  # Username of user
     user_id: list[int],  # list of user IDs to whom the suggestion is made
     text: str,  # title of the post or ""
 ) -> None | Exception:
     notice = {
         "post_id": post_id,
+        "author": author,
         "text": text[150] if len(text) > 150 else text,  # Short preview of the text,
     }
 
@@ -225,9 +226,41 @@ def like(post_id: int, session_user_id: int) -> None:
                 preview_text = post.text[150]
         notic = {
             # Username of who liked the post
-            "user": user.username,
+            "username": user.username,
             # alert message
             "alert": f"{user.username} liked your post.",
+            # Post content text
+            "text": preview_text,  # Short preview of the text,
+            # post id of the post
+            "post_id": post_id,
+        }
+        _create_notification(post.user_id, notic, NotificationType.like)
+    except Exception as e:
+        Log.critical(str(e))
+        raise Exception(str(e))
+    finally:
+        session.close()
+
+
+def repost(post_id: int, session_user_id: int) -> None:
+    session = SessionLocal()
+    try:
+        user = session.query(Users).filter(Users.id == session_user_id).first()
+        if user is None:
+            return
+
+        post = session.query(Posts).filter(Posts.id == post_id).first()
+        if post is None:
+            return
+        preview_text = ""
+        if post.text is not None:
+            if len(post.text) > 150:
+                preview_text = post.text[150]
+        notic = {
+            # Username of who liked the post
+            "username": user.username,
+            # alert message
+            "alert": f"{user.username} reposted your post.",
             # Post content text
             "text": preview_text,  # Short preview of the text,
             # post id of the post
