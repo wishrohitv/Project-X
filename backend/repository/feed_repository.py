@@ -181,12 +181,12 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
             # Check owner of the post
             post = session.query(Posts).where(Posts.id == post_id).first()
             if not post:
-                return {"error": "Post not found"}
+                return {"status": 404, "error": "Post not found"}
 
             if not post.user_id == session_user_id:
                 # Check whether post's visibility is true or false
                 if not post.visibility:
-                    return {"error": "Post is private"}
+                    return {"status": 403, "error": "Post is private"}
 
                 # Fetch only public posts
                 conditions.append(Posts.visibility)
@@ -227,8 +227,8 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
             if USE_CLOUDINARY_STORAGE
             else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{result[3]}.{result[4]}')}",
         }
-        return {"data": post}
+        return {"status": 200, "data": post}
     except Exception as e:
-        return {"error": "Internal Server Error"}
+        return {"status": 500, "error": "Internal Server Error"}
     finally:
         session.close()
