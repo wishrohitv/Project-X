@@ -21,7 +21,7 @@ from .profile import Profile
 class Users(Base):
     __tablename__ = "users"
     id: Mapped[int] = mapped_column(primary_key=True)
-    name: Mapped[str] = mapped_column(String(30))
+    name: Mapped[str] = mapped_column(String(30), nullable=True)
     username: Mapped[str] = mapped_column(String(40))
     email: Mapped[str] = mapped_column(String(40))
     password: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
