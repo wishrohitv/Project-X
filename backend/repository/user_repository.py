@@ -194,7 +194,10 @@ def _get_user_profile(
                 func.count(follower_count.user_id).label("follower_count"),
                 func.count(following_count.follower_id).label("following_count"),
                 exists(
-                    select(Follower).where(Follower.follower_id == session_user_id)
+                    select(1).where(
+                        Follower.follower_id == session_user_id,
+                        Follower.user_id == Users.id,
+                    )
                 ).label(
                     "is_following"  # Whether session user follows or not
                 ),

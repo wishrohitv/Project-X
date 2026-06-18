@@ -1,4 +1,5 @@
 from config import API_ENDPOINTS
+from middlewares.verify_client_request import verify_request_middleware
 from modules import Blueprint, request
 from repository.search_repository import (
     _posts_by_hashtag,
@@ -7,7 +8,8 @@ from repository.search_repository import (
     _search_prediction,
     _trending_hashtags,
 )
-from utils import BadRequestError, SuccessResponse
+from sqlalchemy.sql.functions import session_user
+from utils import BadRequestError, LoggedUser, SuccessResponse
 
 search_blueprint = Blueprint("search", __name__)
 
@@ -16,7 +18,9 @@ route = API_ENDPOINTS()
 
 # /search GET
 @search_blueprint.route(route.search.route_name, methods=route.search.methods)
-def search():
+@verify_request_middleware(route.search.route_name)
+def search(logged_user: LoggedUser | None):
+    session_user_id = logged_user.user_id if logged_user else None
     query = request.args.get("q")
     limit = request.args.get("limit", default=10, type=int)
     offset = request.args.get("offset", default=0, type=int)
@@ -30,7 +34,7 @@ def search():
             "Invalid limit or offset, limit can't be greater than 10 and offset 10"
         )
     if filter_by == "people":
-        return _search_by_users(query, limit, offset)
+        return _search_by_users(query, session_user_id, limit, offset)
     if filter_by == "post":
         return _search_by_posts(query, limit, offset)
     return _search_prediction(query)

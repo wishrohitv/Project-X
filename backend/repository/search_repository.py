@@ -1,10 +1,12 @@
 from database import SessionLocal
-from models import Posts, Profile, Users
+from models import Follower, Posts, Profile, Users
 from modules import (
     API_ROOT_URL,
     TSVECTOR,
     USE_CLOUDINARY_STORAGE,
     and_,
+    exists,
+    func,
     or_,
     request,
     select,
@@ -16,7 +18,12 @@ from utils import BadRequestError, InternalServerError, SuccessResponse
 from .feed_repository import _query_posts
 
 
-def _search_by_users(text: str, limit: int = 10, offset: int = 0):
+def _search_by_users(
+    text: str,
+    session_user_id: int | None,
+    limit: int = 10,
+    offset: int = 0,
+):
     session = SessionLocal()
     value = f"%{text}%"
     try:
@@ -27,6 +34,12 @@ def _search_by_users(text: str, limit: int = 10, offset: int = 0):
                 Profile.media_url,
                 Profile.media_public_id,
                 Profile.file_extension,
+                exists(
+                    select(1).where(
+                        Follower.follower_id == session_user_id,
+                        Follower.user_id == Users.id,
+                    )
+                ).label("is_following"),
             )
             .join(Profile, Users.id == Profile.user_id)
             .where(or_(Users.username.ilike(value), Users.name.ilike(value)))
@@ -41,6 +54,7 @@ def _search_by_users(text: str, limit: int = 10, offset: int = 0):
                 "profile_img_url": [2]
                 if USE_CLOUDINARY_STORAGE
                 else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[3]}.{user[4]}')}",
+                "is_following": user[5],
             }
             for user in result
         ]
