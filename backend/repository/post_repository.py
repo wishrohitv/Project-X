@@ -392,6 +392,7 @@ def _get_post_media(
     offset: int = 0,
     limit: int = 10,
 ) -> tuple[str, str, str, str] | None:
+    session = SessionLocal()
     try:
         post = (
             session.query(
@@ -409,6 +410,8 @@ def _get_post_media(
     except Exception as e:
         print(f"Error fetching post media: {e}")
         return None
+    finally:
+        session.close()
 
 
 def _get_post_by_id_or_post_replies_by_id(
