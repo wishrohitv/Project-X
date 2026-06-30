@@ -34,19 +34,18 @@ def verify_request_middleware(endpoint: str):
             if access_token:
                 decoded_token = decode_jwt_token(access_token)
                 if decoded_token:
+                    user_id = decoded_token["payload"]["id"]
+                    user_role = decoded_token["payload"]["role"]
+
                     # Match the user id and role for this endpoint
-                    has_access_right = get_user_role(
-                        endpoint, decoded_token["payload"]["role"]
-                    )
+                    has_access_right = get_user_role(endpoint, user_id, user_role)
 
                     if has_access_right:
                         return func(
                             logged_user=LoggedUser(
-                                user_id=decoded_token["payload"]["id"],
-                                role_id=decoded_token["payload"]["role"],
-                                role_name=ROLE().rolesIds[
-                                    decoded_token["payload"]["role"]
-                                ],
+                                user_id=user_id,
+                                role_id=user_role,
+                                role_name=ROLE().rolesIds[user_role],
                                 access_token=access_token,
                                 refresh_token=refresh_token,
                             ),
