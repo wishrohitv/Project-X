@@ -24,10 +24,10 @@ class CollectionData(Base):
     collection_id: Mapped[int] = mapped_column(ForeignKey("collections.id"))
     post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), default=datetime_utc()
+        TIMESTAMP(timezone=True), default=datetime_utc
     )
     updated_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), onupdate=datetime_utc(), default=datetime_utc()
+        TIMESTAMP(timezone=True), onupdate=datetime_utc, default=datetime_utc
     )
 
     def __repr__(self):

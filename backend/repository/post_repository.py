@@ -212,7 +212,7 @@ def _post_toggle_bookmark(session_user_id: int, post_id: int):
 
 
 def _delete_post(post_id: int, session_user_id: int):
-    # TODO : Hndle edge case
+    # TODO : Handle edge case
     session = SessionLocal()
     try:
         result = (

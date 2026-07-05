@@ -53,12 +53,12 @@ class Posts(Base):
     is_template: Mapped[bool] = mapped_column(default=False, nullable=False)
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
-        default=datetime_utc(),
+        default=datetime_utc,
     )
     updated_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
-        onupdate=datetime_utc(),
-        default=datetime_utc(),
+        onupdate=datetime_utc,
+        default=datetime_utc,
     )
 
     def __repr__(self) -> str:

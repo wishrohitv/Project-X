@@ -27,7 +27,7 @@ class Users(Base):
     password: Mapped[bytes] = mapped_column(LargeBinary, nullable=True)
     provider: Mapped[Provider] = mapped_column(Enum(Provider), default=Provider.local)
     created_at: Mapped[datetime] = mapped_column(
-        TIMESTAMP(timezone=True), nullable=False, default=datetime_utc()
+        TIMESTAMP(timezone=True), nullable=False, default=datetime_utc
     )
     role: Mapped[int] = mapped_column(ForeignKey("role.id"), default=3)
     account_status: Mapped[AccountStatus] = mapped_column(

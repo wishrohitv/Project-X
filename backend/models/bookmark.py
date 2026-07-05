@@ -20,5 +20,5 @@ class Bookmark(Base):
     post_id: Mapped[int] = mapped_column(ForeignKey("posts.id"))
     user_id: Mapped[int] = mapped_column(ForeignKey("users.id"))
     created_at: Mapped[str] = mapped_column(
-        "timestamp", TIMESTAMP(timezone=True), nullable=False, default=datetime_utc()
+        "timestamp", TIMESTAMP(timezone=True), nullable=False, default=datetime_utc
     )
