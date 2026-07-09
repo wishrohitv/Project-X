@@ -56,12 +56,6 @@ ALLOWED_POST_FILE_MIMETYPE: dict[str, str] = {
     "video/mp4": "mp4",
     "image/gif": "gif",
 }
-PASS_HASH_KEY: bytes = b"hellofromjapan"
-
-JWT_HASH_KEY: str = "YourSuperSecreteJwtHashKsy"
-
-PORT: int = 5000
-HOST: str = "0.0.0.0"
 
 # Public directory to store clients media data
 PUBLIC_DIRECTORY_PROFILES: str = "public/profiles"

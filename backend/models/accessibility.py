@@ -26,8 +26,7 @@ class Accessibility(Base):
 
     def __repr__(self) -> str:
         return f"""
-            Accessibility(id={self.id!r},
+            <Accessibility(id={self.id!r},
             endpoint_id={self.endpoint_id!r},
-            roles={self.roles!r})
-            partial_access={self.partial_access!r}
-            """
+            roles={self.roles!r},
+            partial_access={self.partial_access!r})>"""

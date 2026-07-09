@@ -41,7 +41,7 @@ class Users(Base):
     )
 
     def __repr__(self) -> str:
-        return f"""Users(
+        return f"""<Users(
                 id={self.id!r},
                 name={self.name!r},
                 username={self.username!r}
@@ -51,4 +51,4 @@ class Users(Base):
                 password{self.password!r},
                 account_status={self.account_status!r},
                 is_verified={self.is_verified!r}
-            )"""
+            )>"""

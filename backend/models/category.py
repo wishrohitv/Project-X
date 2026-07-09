@@ -27,9 +27,9 @@ class Category(Base):
 
     def __repr__(self) -> str:
         return f"""
-        Category(
+        <Category(
             id={self.id!r},
             category={self.category},
             created_at={self.created_at!r},
             updated_at={self.updated_at!r},
-        )"""
+        )>"""

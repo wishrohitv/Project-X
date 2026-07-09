@@ -1,9 +1,6 @@
 from database import initialize_db
-from dotenv import load_dotenv
 from modules import (
     CORS,
-    HOST,
-    PORT,
     SEREVR_ALLOWED_UPLOAD_FILE_SIZE,
     Flask,
     jsonify,
@@ -11,10 +8,9 @@ from modules import (
     traceback,
 )
 from repository.init_db_setup import init_db_setup
+from settings import Settings
 from tasks import start_worker
 from utils import AppError
-
-load_dotenv()
 
 
 def run_app():
@@ -22,8 +18,8 @@ def run_app():
     initialize_db()
 
     app = Flask(__name__)
-    app.secret_key = os.environ.get("APP_SECRET_KEY") or "default_secret_key"
-    origins = os.environ.get("ORIGINS")
+    app.secret_key = Settings.APP_SECRET_KEY
+    origins = Settings.ORIGINS
     CORS(
         app,
         supports_credentials=True,
@@ -94,4 +90,4 @@ def run_app():
 
 if __name__ == "__main__":
     app = run_app()
-    app.run(debug=True, host=HOST, port=PORT)
+    app.run(debug=Settings.DEBUG, host=Settings.HOST, port=Settings.PORT)

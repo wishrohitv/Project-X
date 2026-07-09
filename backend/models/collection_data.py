@@ -31,10 +31,10 @@ class CollectionData(Base):
     )
 
     def __repr__(self):
-        return f"""CollectionData(
+        return f"""<CollectionData(
                 id={self.id!r},
                 collectionId={self.collection_id!r},
                 post_id={self.post_id!r},
                 created_at={self.created_at!r},
                 updated_at={self.updated_at!r}
-            )"""
+            )>"""

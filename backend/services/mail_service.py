@@ -1,11 +1,7 @@
-import os
-
 import resend
-from dotenv import load_dotenv
+from settings import Settings
 
-load_dotenv()
-
-resend.api_key = os.environ.get("RESEND_API_KEY")
+resend.api_key = Settings.RESEND_API_KEY
 
 
 def send_otp(to: str, otp: str):

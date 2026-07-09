@@ -1,15 +1,13 @@
 import sys
 
 import redis
-from dotenv import load_dotenv
 from modules import create_engine, os, sessionmaker
 from redis import RedisError
-
-load_dotenv()
+from settings import Settings
 
 try:
     # Initialize database engine
-    engine = create_engine(os.environ.get("DB_URL") or "", pool_pre_ping=True)
+    engine = create_engine(Settings.DB_URL or "", pool_pre_ping=True)
 
     SessionLocal = sessionmaker(
         bind=engine,
@@ -18,9 +16,7 @@ try:
     )
 
     # Initialize Redis client
-    redis_client = redis.Redis.from_url(
-        os.environ.get("REDIS_URL") or "", decode_responses=True
-    )
+    redis_client = redis.Redis.from_url(Settings.REDIS_URL or "", decode_responses=True)
 except RedisError as e:
     print(f"Failed to initialize Redis client: {e}")
     sys.exit(1)

@@ -24,4 +24,6 @@ class BlockedUsers(Base):
     )
 
     def __repr__(self) -> str:
-        return f"BlockedUser(user_id={self.user_id!r}, blocked_by={self.blocked_by!r})"
+        return (
+            f"<BlockedUser(user_id={self.user_id!r}, blocked_by={self.blocked_by!r})>"
+        )

@@ -73,6 +73,11 @@ from flask import (
 
 # Flask cors
 from flask_cors import CORS
+
+# Flask socket io
+from flask_socketio import SocketIO
+
+# Sqlalchemy
 from sqlalchemy import (
     ARRAY,
     BOOLEAN,
