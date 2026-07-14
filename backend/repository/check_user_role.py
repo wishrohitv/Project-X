@@ -18,6 +18,8 @@ def get_user_role(endpoint: str, user_id: int, user_role: int) -> bool:
                 raise ForbiddenError("Account is suspended")
             if user.account_status == AccountStatus.deleted:
                 raise ForbiddenError("Account is deleted")
+            if not user.is_verified:
+                raise ForbiddenError("Account is not verified")
         else:
             raise ResourceNotFoundError("Account not found")
 
