@@ -3,17 +3,19 @@ from typing import Any
 from modules import datetime, jwt, timedelta
 from settings import Settings
 
-from . import TokenExpiredError
-
 
 def decode_jwt_token(client_token):
-    try:
-        data = jwt.decode(
-            jwt=client_token, key=Settings.JWT_HASH_KEY, algorithms="HS256"
-        )
-        return data
-    except jwt.ExpiredSignatureError as e:
-        raise TokenExpiredError("Token has expired")
+    """
+    Decodes a JWT token using the application's hash key.
+    exception should be handled by the caller.
+    Args:
+        client_token (str): The JWT token to decode.
+
+    Returns:
+        dict: The decoded token payload.
+    """
+    data = jwt.decode(jwt=client_token, key=Settings.JWT_HASH_KEY, algorithms="HS256")
+    return data
 
 
 def generate_jwt_token(user_data: dict[str, Any], expire_in_minute: int):

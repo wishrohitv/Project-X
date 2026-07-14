@@ -19,6 +19,7 @@ from modules import (
     exists,
     func,
     jsonify,
+    jwt,
     make_response,
     or_,
     os,
@@ -290,9 +291,13 @@ def _refresh_tokens(refresh_token: str):
     except AppError:
         session.rollback()
         raise
+    except jwt.InvalidSignatureError:
+        raise TokenExpiredError("Invalid refresh token")
+    except jwt.ExpiredSignatureError:
+        raise TokenExpiredError("Refresh token expired")
     except Exception as e:
         session.rollback()
-        raise Exception(e)
+        raise InternalServerError("Error while refreshing session") from e
     finally:
         session.close()
 

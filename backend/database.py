@@ -14,9 +14,10 @@ try:
         autoflush=False,
         autocommit=False,
     )
-
+    print("Database engine initialized", engine.name)
     # Initialize Redis client
     redis_client = redis.Redis.from_url(Settings.REDIS_URL or "", decode_responses=True)
+    print("Redis client initialized", redis_client.connection)
 except RedisError as e:
     print(f"Failed to initialize Redis client: {e}")
     sys.exit(1)

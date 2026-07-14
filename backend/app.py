@@ -8,6 +8,7 @@ from modules import (
     traceback,
 )
 from repository.init_db_setup import init_db_setup
+from services import initialize_socket
 from settings import Settings
 from tasks import start_worker
 from utils import AppError
@@ -28,7 +29,8 @@ def run_app():
 
     app.config["path"] = "public"
     app.config["MAX_CONTENT_LENGTH"] = SEREVR_ALLOWED_UPLOAD_FILE_SIZE
-
+    # Initialize socket
+    socket_io = initialize_socket(app)
     # Blueprint for auth
     from routes.v1.auth import auth_blueprint
 
@@ -85,9 +87,9 @@ def run_app():
     # Start background worker
     start_worker()
 
-    return app
+    return app, socket_io
 
 
 if __name__ == "__main__":
-    app = run_app()
-    app.run(debug=Settings.DEBUG, host=Settings.HOST, port=Settings.PORT)
+    app, socket_io = run_app()
+    socket_io.run(app, debug=Settings.DEBUG, host=Settings.HOST, port=Settings.PORT)
