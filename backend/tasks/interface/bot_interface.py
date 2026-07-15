@@ -3,8 +3,10 @@ from models import Posts, Users
 from modules import APP_NAME
 
 # from repository.post_repository import _create_post
-from services.bot_service import generate_bot_response
-from utils import get_usernames
+from services.bot_service import gemini_agent, generate_bot_response
+from utils import Logging, get_usernames
+
+log = Logging(__name__)
 
 
 def process_user_requests(
@@ -20,20 +22,13 @@ def process_user_requests(
 
     # Set rate limit
     # TODO: Implement rate limiting
-    try:
-        parent_post = None
-        if parent_post_id:
-            parent_post = (
-                session.query(Posts, Users.username)
-                .join(Users, Posts.user_id == Users.id)
-                .filter(
-                    Posts.parent_post_id == parent_post_id,
-                    Posts.id == current_post_id,
-                    Posts.visibility,
-                )
-                .first()
-            )
+    key = f"rate_limit_agent:{current_post_id}"
+    if redis_client.exists(key):
+        log.info(f"Rate limit exceeded for agent: {key}")
+        return
+    redis_client.set(key, 1, ex=60)  # 1 request per minute
 
+    try:
         current_post = (
             session.query(Posts, Users.username)
             .join(Users, Posts.user_id == Users.id)
@@ -47,18 +42,14 @@ def process_user_requests(
         if not current_post:
             return
 
-        # query = {
-        #     "role": f"Chat bot of {APP_NAME}(similar to x/twitter) and your name is nara, context can be empty, don't mention about yourself unless you are explicitily asked,  don't mention usernames unless it is required",
-        #     "context": "user:@anme post:'This is the best movie i have ever seen, avenger is a best movie'",
-        #     "task": "user:@john post:'Hi @nara can you explain about the post'",
-        # }
-        query = {
-            "role": f"Chat bot of {APP_NAME}(similar to x/twitter) and your name is nara, context can be empty, don't mention about yourself unless you are explicitily asked,  don't mention usernames unless it is required",
-            "task": f"user:{current_post[1]} post:'{current_post[0].text}'",
-        }
-        if parent_post:
-            query["context"] = f"user:{parent_post[1]} post:'{parent_post[0].text}'"
-        response = generate_bot_response(str(query))
+        result = gemini_agent(
+            current_post[0].user_id, current_post[0].text, parent_post_id
+        )
+
+        log.info(f"Agent call completed: result={result[:10] if result else None}")
+
+        if not result:
+            return
 
         # Create post for this response
         from repository.post_repository import _create_post
@@ -70,7 +61,7 @@ def process_user_requests(
 
         _create_post(
             user_id=32,  # Default user_id for bot, representing the bot itself
-            text=response,
+            text=result,
             tags=None,
             media_url=None,
             media_public_id=None,
