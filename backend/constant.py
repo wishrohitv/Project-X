@@ -1,5 +1,5 @@
 # App name
-APP_NAME: str = "Meme Store"
+APP_NAME: str = "Project X"
 
 # App version
 APP_VERSION: str = "1.0.0"
