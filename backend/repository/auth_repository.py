@@ -37,6 +37,7 @@ from utils import (
     ForbiddenError,
     InternalServerError,
     InvalidCredentialsError,
+    RateLimitExceededError,
     ResourceNotFoundError,
     SuccessResponse,
     TokenExpiredError,
@@ -176,7 +177,21 @@ def _signup_user(
 
 def _generate_otp_for_user(user_id: int):
     session = SessionLocal()
-    # TODO: Implement rate limiting, and check email bounce
+    # TODO: check email bounce
+
+    key = f"rate_limit:{user_id}"
+
+    count = redis_client.incr(key)
+
+    if count == 1:
+        redis_client.expire(key, 30)
+
+    if count > 3:
+        ttl = redis_client.ttl(key)
+        raise RateLimitExceededError(
+            f"Rate limit exceeded. Try again after {ttl} seconds."
+        )
+
     try:
         user = session.query(Users).filter(Users.id == user_id).first()
         if not user:
@@ -207,9 +222,10 @@ def _verify_user(user_id: int, entered_otp: str):
             raise BadRequestError("User already verified")
 
         stored_otp = redis_client.get(f"otp:{user_id}")
+
         if not stored_otp:
             raise BadRequestError("OTP expired")
-        if stored_otp != entered_otp:
+        if stored_otp != str(entered_otp):
             raise BadRequestError("Invalid OTP")
 
         user.is_verified = True

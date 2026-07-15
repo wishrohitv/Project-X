@@ -16,8 +16,10 @@ try:
     )
     print("Database engine initialized", engine.name)
     # Initialize Redis client
-    redis_client = redis.Redis.from_url(Settings.REDIS_URL or "", decode_responses=True)
-    print("Redis client initialized", redis_client.connection)
+    # redis_client = redis.Redis.from_url(Settings.REDIS_URL or "", decode_responses=True)
+    redis_client = redis.Redis(host="localhost", port=6379, decode_responses=True)
+    print("Redis client initialized Ping", redis_client.ping())
+    print("Redis client initialized", redis_client.acl_whoami())
 except RedisError as e:
     print(f"Failed to initialize Redis client: {e}")
     sys.exit(1)

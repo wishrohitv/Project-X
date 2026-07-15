@@ -75,7 +75,16 @@ from flask import (
 from flask_cors import CORS
 
 # Flask socket io
-from flask_socketio import SocketIO
+from flask_socketio import (
+    SocketIO,
+    close_room,
+    disconnect,
+    emit,
+    join_room,
+    leave_room,
+    rooms,
+    send,
+)
 
 # Sqlalchemy
 from sqlalchemy import (
