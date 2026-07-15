@@ -465,7 +465,7 @@ def _get_post_by_id_or_post_replies_by_id(
                 )
             return SuccessResponse(
                 message="Post retrieved successfully",
-                data=json.dumps(posts_or_replies),
+                data=posts_or_replies,
                 status_code=200,
             )
         else:

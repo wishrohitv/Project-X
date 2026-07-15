@@ -128,34 +128,36 @@ def _query_posts(
                     "username": feed[0],
                     "user_id": feed[1].user_id,
                 },
-                "post_id": feed[1].id,
-                "text": feed[1].text,
-                "tags": feed[1].tags,
-                "replying_to": feed[1].replying_to,
-                "file_type": feed[1].file_type,
-                "file_extension": feed[1].file_extension,
-                "visibility": feed[1].visibility,
-                "parent_post_id": _get_parent_post(
-                    feed[1].parent_post_id, session_user_id
-                )
-                if not feed[1].is_reply
-                else None,  # Check if post's 'is_reply=True' send None because
-                "created_at": feed[1].created_at.isoformat(),
-                "age_rating": feed[
-                    1
-                ].age_rating.value,  # Return Enum class from db and get its value from 'age_rating': <PostAgeRating.pg13: 'pg13'>,
-                "category": feed[1].category,
-                "is_template": feed[1].is_template,
-                "post_media_url": feed[1].media_url
-                if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
-                "like_count": feed[5],
-                "repost_count": feed[6],
-                "bookmark_count": feed[7],
-                "replies_count": feed[8],
-                "is_liked": feed[9],
-                "is_bookmarked": feed[10],
-                "is_reposted": feed[11],
+                "post": {
+                    "post_id": feed[1].id,
+                    "text": feed[1].text,
+                    "tags": feed[1].tags,
+                    "replying_to": feed[1].replying_to,
+                    "file_type": feed[1].file_type,
+                    "file_extension": feed[1].file_extension,
+                    "visibility": feed[1].visibility,
+                    "parent_post_id": _get_parent_post(
+                        feed[1].parent_post_id, session_user_id
+                    )
+                    if not feed[1].is_reply
+                    else None,  # Check if post's 'is_reply=True' send None because
+                    "created_at": feed[1].created_at.isoformat(),
+                    "age_rating": feed[
+                        1
+                    ].age_rating.value,  # Return Enum class from db and get its value from 'age_rating': <PostAgeRating.pg13: 'pg13'>,
+                    "category": feed[1].category,
+                    "is_template": feed[1].is_template,
+                    "post_media_url": feed[1].media_url
+                    if USE_CLOUDINARY_STORAGE
+                    else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
+                    "like_count": feed[5],
+                    "repost_count": feed[6],
+                    "bookmark_count": feed[7],
+                    "replies_count": feed[8],
+                    "is_liked": feed[9],
+                    "is_bookmarked": feed[10],
+                    "is_reposted": feed[11],
+                },
             }
             for feed in get_feed
         ]
