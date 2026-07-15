@@ -1,13 +1,13 @@
-# MemeStore
+# Project X
 
-MemeStore is a social media platform for sharing and discovering meme templates. Users can create profiles, upload their own memes, follow other users, and engage with the community through likes, comments, and reposts and can create collections of memes.
+Project X is a social media platform for sharing and discovering posts. Users can create profiles, upload their own posts, follow other users, and engage with the community through likes, comments, and reposts and can create collections of posts.
 
-Visit the [Memer.in](https://memer.in) to see, use the project in action.
 
-### Project Status
+### Frontend Status
 -- Work in Progress
+  Visit the [memer.in](https://memer.in) to see, use the project in action.
 
-A project for social media for sharing Memes templates
+A project for social media for sharing posts
 contains frontend and backend
 
 ## Features
@@ -31,8 +31,8 @@ contains frontend and backend
 - Post likes, bookmarks and download count
 - Collections (User can create, edit, delete and share collections of memes like Youtube playlist)
 - Search Functionality
-- Notifications
-- **NARA** (AI chat bot similar to Grok bot)
+- Notifications (Real-time notifications for likes, comments, and new posts) using WebSockets
+- **NARA** (AI chat bot similar to Grok bot) underlying AI Agent
 - Analytics (Planned - not implemented yet)
 - Chat (Planned - not implemented yet)
 
