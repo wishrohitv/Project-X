@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS, ROLE
-from modules import functools, make_response, re, request
+from modules import functools, jwt, make_response, re, request
 from repository.check_user_role import get_user_role
 from utils import (
     AppError,
@@ -32,7 +32,12 @@ def verify_request_middleware(endpoint: str):
                 refresh_token = request.cookies.get("refresh-token")
 
             if access_token:
-                decoded_token = decode_jwt_token(access_token)
+                try:
+                    decoded_token = decode_jwt_token(access_token)
+                except jwt.ExpiredSignatureError:
+                    raise UnAuthorizedError("Token expired")
+                except jwt.PyJWTError:
+                    raise UnAuthorizedError("Invalid token")
                 if decoded_token:
                     user_id = decoded_token["payload"]["id"]
                     user_role = decoded_token["payload"]["role"]
