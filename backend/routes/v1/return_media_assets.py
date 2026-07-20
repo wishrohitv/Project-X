@@ -1,4 +1,3 @@
-from constant import USE_CLOUDINARY_STORAGE
 from modules import (
     PUBLIC_DIRECTORY_POSTS,
     PUBLIC_DIRECTORY_PROFILES,

@@ -1,12 +1,11 @@
 from config import API_ENDPOINTS
-from middlewares.verify_client_request import verify_request_middleware
+from middlewares import verify_request_middleware
 from modules import (
     ALLOWED_PROFILE_FILE_MIMETYPE,
     ALLOWED_PROFILE_FILE_SIZE,
     PUBLIC_DIRECTORY_PROFILES,
     USE_CLOUDINARY_STORAGE,
     Blueprint,
-    make_response,
     os,
     request,
     secure_filename,
@@ -39,7 +38,7 @@ route = API_ENDPOINTS()
 
 # /users/<string:username>
 @users_blueprint.route(f"{route.user.route_name}", methods=route.user.methods)
-@verify_request_middleware(route.user.route_name)
+@verify_request_middleware(route.user)
 def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwargs):
     username: str | None = kwargs["username"] or request.args.get("username")
     user_id = request.args.get("user_id")
@@ -64,7 +63,7 @@ def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwar
 
 # /user PUT
 @users_blueprint.route(route.user_update.route_name, methods=route.user_update.methods)
-@verify_request_middleware(route.user_update.route_name)
+@verify_request_middleware(route.user_update)
 def users_update_info(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     body = request.get_json()
@@ -87,7 +86,7 @@ def users_update_info(logged_user: LoggedUser, *args, **kwargs):
 @users_blueprint.route(
     route.user_change_profile.route_name, methods=route.user_change_profile.methods
 )
-@verify_request_middleware(route.user_change_profile.route_name)
+@verify_request_middleware(route.user_change_profile)
 def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
     profile_media_uid = str(uuid.uuid4())
     session_user_id = logged_user.user_id
@@ -131,7 +130,7 @@ def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
 
 # /user DELETE
 @users_blueprint.route(route.user_delete.route_name, methods=route.user_delete.methods)
-@verify_request_middleware(route.user_delete.route_name)
+@verify_request_middleware(route.user_delete)
 def users_delete():
     raise NotImplementedError()
 
@@ -140,7 +139,7 @@ def users_delete():
 @users_blueprint.route(
     route.user_remove_follower.route_name, methods=route.user_remove_follower.methods
 )
-@verify_request_middleware(route.user_remove_follower.route_name)
+@verify_request_middleware(route.user_remove_follower)
 def remove_follower(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     target_user_id: int = kwargs["user_id"]
@@ -154,7 +153,7 @@ def remove_follower(logged_user: LoggedUser, *args, **kwargs):
 @users_blueprint.route(
     route.user_add_follower.route_name, methods=route.user_add_follower.methods
 )
-@verify_request_middleware(route.user_add_follower.route_name)
+@verify_request_middleware(route.user_add_follower)
 def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
     target_user_id = kwargs["user_id"]
@@ -167,7 +166,7 @@ def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
 
 # /users/<int:user_id>/block POST
 @users_blueprint.route(route.user_block.route_name, methods=route.user_block.methods)
-@verify_request_middleware(route.user_block.route_name)
+@verify_request_middleware(route.user_block)
 def block_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     target_user_id = kwargs["user_id"]
@@ -180,7 +179,7 @@ def block_user(logged_user: LoggedUser, *args, **kwargs):
 @users_blueprint.route(
     route.user_unblock.route_name, methods=route.user_unblock.methods
 )
-@verify_request_middleware(route.user_unblock.route_name)
+@verify_request_middleware(route.user_unblock)
 def unblock_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     target_user_id = kwargs["user_id"]
@@ -195,7 +194,7 @@ def unblock_user(logged_user: LoggedUser, *args, **kwargs):
     route.user_report_users.route_name,
     methods=route.user_report_users.methods,
 )
-@verify_request_middleware(route.user_report_users.route_name)
+@verify_request_middleware(route.user_report_users)
 def report_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     target_user_id = kwargs["user_id"]

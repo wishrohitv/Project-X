@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares.verify_client_request import verify_request_middleware
+from middlewares import verify_request_middleware
 from modules import Blueprint, request
 from repository.notification_repository import (
     _get_notifications,
@@ -25,7 +25,7 @@ logger = Logging(__name__)
 @notification_blueprint.route(
     f"{route.notifications.route_name}", methods=route.notifications.methods
 )
-@verify_request_middleware(route.notifications.route_name)
+@verify_request_middleware(route.notifications)
 def get_notifications(logged_user: LoggedUser, *args, **kwargs):
 
     session_user_id = logged_user.user_id
@@ -41,7 +41,7 @@ def get_notifications(logged_user: LoggedUser, *args, **kwargs):
     f"{route.notifications_unread_count.route_name}",
     methods=route.notifications_unread_count.methods,
 )
-@verify_request_middleware(route.notifications_unread_count.route_name)
+@verify_request_middleware(route.notifications_unread_count)
 def unread_count_notifications(logged_user: LoggedUser, *args, **kwargs):
 
     session_user_id = logged_user.user_id
@@ -52,7 +52,7 @@ def unread_count_notifications(logged_user: LoggedUser, *args, **kwargs):
 @notification_blueprint.route(
     route.notifications_track.route_name, methods=route.notifications_track.methods
 )
-@verify_request_middleware(route.notifications_track.route_name)
+@verify_request_middleware(route.notifications_track)
 def track_notification_click(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     notification_id = kwargs["notification_id"]

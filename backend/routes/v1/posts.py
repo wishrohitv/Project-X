@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares.verify_client_request import verify_request_middleware
+from middlewares import verify_request_middleware
 from modules import (
     ALLOWED_POST_FILE_MIMETYPE,
     ALLOWED_POST_FILE_SIZE,
@@ -7,7 +7,6 @@ from modules import (
     USE_CLOUDINARY_STORAGE,
     Blueprint,
     json,
-    make_response,
     os,
     request,
     secure_filename,
@@ -50,7 +49,7 @@ route = API_ENDPOINTS()
 # /posts/<string:username> GET
 # Unlogged user can access public posts
 @posts_blueprint.route(route.posts.route_name, methods=route.posts.methods)
-@verify_request_middleware(route.posts.route_name)
+@verify_request_middleware(route.posts)
 def posts(logged_user: LoggedUser | None, *args, **kwargs):
     username: str = kwargs["username"]
     order_by = request.args.get("order_by")
@@ -76,7 +75,7 @@ def posts(logged_user: LoggedUser | None, *args, **kwargs):
     route.posts_liked_users.route_name,
     methods=route.posts_liked_users.methods,
 )
-@verify_request_middleware(route.posts_liked_users.route_name)
+@verify_request_middleware(route.posts_liked_users)
 def post_liked_user(logged_user: LoggedUser | None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
@@ -96,7 +95,7 @@ def post_liked_user(logged_user: LoggedUser | None, *args, **kwargs):
     route.post_bookmarked_users.route_name,
     methods=route.post_bookmarked_users.methods,
 )
-@verify_request_middleware(route.post_bookmarked_users.route_name)
+@verify_request_middleware(route.post_bookmarked_users)
 def post_bookmarked_user(logged_user: LoggedUser | None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
@@ -116,7 +115,7 @@ def post_bookmarked_user(logged_user: LoggedUser | None, *args, **kwargs):
     route.post_reposted_users.route_name,
     methods=route.post_reposted_users.methods,
 )
-@verify_request_middleware(route.post_reposted_users.route_name)
+@verify_request_middleware(route.post_reposted_users)
 def postRepostedUser(logged_user: LoggedUser | None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
@@ -136,7 +135,7 @@ def postRepostedUser(logged_user: LoggedUser | None, *args, **kwargs):
     route.post_qouted_users.route_name,
     methods=route.post_qouted_users.methods,
 )
-@verify_request_middleware(route.post_qouted_users.route_name)
+@verify_request_middleware(route.post_qouted_users)
 def postReqoutedUser(logged_user: LoggedUser | None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id if logged_user else None
@@ -155,7 +154,7 @@ def postReqoutedUser(logged_user: LoggedUser | None, *args, **kwargs):
 @posts_blueprint.route(
     route.post_upload_post.route_name, methods=route.post_upload_post.methods
 )
-@verify_request_middleware(route.post_upload_post.route_name)
+@verify_request_middleware(route.post_upload_post)
 def upload_posts(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
 
@@ -252,7 +251,7 @@ def upload_posts(logged_user: LoggedUser, *args, **kwargs):
 
 # /posts/<int:post_id>/repost POST
 @posts_blueprint.route(route.post_repost.route_name, methods=route.post_repost.methods)
-@verify_request_middleware(route.post_repost.route_name)
+@verify_request_middleware(route.post_repost)
 def post_repost(logged_user: LoggedUser, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id
@@ -263,7 +262,7 @@ def post_repost(logged_user: LoggedUser, *args, **kwargs):
 @posts_blueprint.route(
     route.post_repost_undo.route_name, methods=route.post_repost_undo.methods
 )
-@verify_request_middleware(route.post_repost_undo.route_name)
+@verify_request_middleware(route.post_repost_undo)
 def post_repost_undo(logged_user: LoggedUser, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id = logged_user.user_id
@@ -272,7 +271,7 @@ def post_repost_undo(logged_user: LoggedUser, *args, **kwargs):
 
 # /posts/<int:post_id>/like POST
 @posts_blueprint.route(route.post_like.route_name, methods=route.post_like.methods)
-@verify_request_middleware(route.post_like.route_name)
+@verify_request_middleware(route.post_like)
 def post_like(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
     post_id = kwargs["post_id"]
@@ -284,7 +283,7 @@ def post_like(logged_user: LoggedUser, *agrs, **kwargs):
 @posts_blueprint.route(
     route.post_like_undo.route_name, methods=route.post_like_undo.methods
 )
-@verify_request_middleware(route.post_like_undo.route_name)
+@verify_request_middleware(route.post_like_undo)
 def post_like_undo(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
     post_id = kwargs["post_id"]
@@ -296,7 +295,7 @@ def post_like_undo(logged_user: LoggedUser, *agrs, **kwargs):
 @posts_blueprint.route(
     route.post_bookmark.route_name, methods=route.post_bookmark.methods
 )
-@verify_request_middleware(route.post_bookmark.route_name)
+@verify_request_middleware(route.post_bookmark)
 def post_bookmark(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
 
@@ -309,7 +308,7 @@ def post_bookmark(logged_user: LoggedUser, *agrs, **kwargs):
 @posts_blueprint.route(
     route.post_bookmark_undo.route_name, methods=route.post_bookmark_undo.methods
 )
-@verify_request_middleware(route.post_bookmark_undo.route_name)
+@verify_request_middleware(route.post_bookmark_undo)
 def post_bookmark_undo(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
 
@@ -322,7 +321,7 @@ def post_bookmark_undo(logged_user: LoggedUser, *agrs, **kwargs):
 @posts_blueprint.route(
     route.post_mark_as_template.route_name, methods=route.post_mark_as_template.methods
 )
-@verify_request_middleware(route.post_mark_as_template.route_name)
+@verify_request_middleware(route.post_mark_as_template)
 def post_mark_as_template(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
 
@@ -336,7 +335,7 @@ def post_mark_as_template(logged_user: LoggedUser, *agrs, **kwargs):
     route.post_unmark_as_template.route_name,
     methods=route.post_unmark_as_template.methods,
 )
-@verify_request_middleware(route.post_unmark_as_template.route_name)
+@verify_request_middleware(route.post_unmark_as_template)
 def post_unmark_as_template(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
 
@@ -347,7 +346,7 @@ def post_unmark_as_template(logged_user: LoggedUser, *agrs, **kwargs):
 
 # /posts/<int:post_id> DELETE
 @posts_blueprint.route(route.post_delete.route_name, methods=route.post_delete.methods)
-@verify_request_middleware(route.post_delete.route_name)
+@verify_request_middleware(route.post_delete)
 def delete_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     post_id = kwargs["post_id"]
@@ -361,7 +360,7 @@ def delete_post(logged_user: LoggedUser, *args, **kwargs):
 
 # /posts/<int:post_id> PATCH
 @posts_blueprint.route(route.post_update.route_name, methods=route.post_update.methods)
-@verify_request_middleware(route.post_update.route_name)
+@verify_request_middleware(route.post_update)
 def update_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     post_id = kwargs["post_id"]
@@ -393,7 +392,7 @@ def update_post(logged_user: LoggedUser, *args, **kwargs):
     route.posts_by_id.route_name,
     methods=route.posts_by_id.methods,
 )
-@verify_request_middleware(route.posts_by_id.route_name)
+@verify_request_middleware(route.posts_by_id)
 def posts_by_id(logged_user: LoggedUser | None = None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id: int | None = logged_user.user_id if logged_user else None
@@ -408,7 +407,7 @@ def posts_by_id(logged_user: LoggedUser | None = None, *args, **kwargs):
     route.post_replies.route_name,
     methods=route.post_replies.methods,
 )
-@verify_request_middleware(route.post_replies.route_name)
+@verify_request_middleware(route.post_replies)
 def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
     post_id: int = kwargs["post_id"]
 
@@ -420,7 +419,7 @@ def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
     route.report_post.route_name,
     methods=route.report_post.methods,
 )
-@verify_request_middleware(route.report_post.route_name)
+@verify_request_middleware(route.report_post)
 def report_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     post_id: int = kwargs["post_id"]

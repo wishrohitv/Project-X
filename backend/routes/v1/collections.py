@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares.verify_client_request import verify_request_middleware
+from middlewares import verify_request_middleware
 from modules import Blueprint, make_response, request
 from repository.collection_repository import (
     _add_post_to_collection,
@@ -18,7 +18,7 @@ route = API_ENDPOINTS()
 @collection_blueprint.route(
     route.collection.route_name, methods=route.collection.methods
 )
-@verify_request_middleware(route.collection.route_name)
+@verify_request_middleware(route.collection)
 def collection(logged_user: LoggedUser, *args, **kwargs):
     return make_response({}, 201)
 
@@ -27,7 +27,7 @@ def collection(logged_user: LoggedUser, *args, **kwargs):
 @collection_blueprint.route(
     route.collection_create.route_name, methods=route.collection_create.methods
 )
-@verify_request_middleware(route.collection_create.route_name)
+@verify_request_middleware(route.collection_create)
 def create_collection(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     body = request.get_json()
@@ -45,7 +45,7 @@ def create_collection(logged_user: LoggedUser, *args, **kwargs):
     route.collection_add_post.route_name,
     methods=route.collection_add_post.methods,
 )
-@verify_request_middleware(route.collection_add_post.route_name)
+@verify_request_middleware(route.collection_add_post)
 def add_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     collection_id = kwargs["collection_id"]
@@ -62,7 +62,7 @@ def add_post(logged_user: LoggedUser, *args, **kwargs):
     f"{route.collection_remove_post.route_name}",
     methods=route.collection_remove_post.methods,
 )
-@verify_request_middleware(route.collection_remove_post.route_name)
+@verify_request_middleware(route.collection_remove_post)
 def remove_posts(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     collection_id = kwargs["collection_id"]
@@ -81,7 +81,7 @@ def remove_posts(logged_user: LoggedUser, *args, **kwargs):
     route.collection_delete.route_name,
     methods=route.collection_delete.methods,
 )
-@verify_request_middleware(route.collection_delete.route_name)
+@verify_request_middleware(route.collection_delete)
 def delete_collection(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
     collection_id = kwargs["collection_id"]

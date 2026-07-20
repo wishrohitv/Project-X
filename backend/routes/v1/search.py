@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares.verify_client_request import verify_request_middleware
+from middlewares import verify_request_middleware
 from modules import Blueprint, request
 from repository.search_repository import (
     _posts_by_hashtag,
@@ -18,7 +18,7 @@ route = API_ENDPOINTS()
 
 # /search GET
 @search_blueprint.route(route.search.route_name, methods=route.search.methods)
-@verify_request_middleware(route.search.route_name)
+@verify_request_middleware(route.search)
 def search(logged_user: LoggedUser | None):
     session_user_id = logged_user.user_id if logged_user else None
     query = request.args.get("q")
