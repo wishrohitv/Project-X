@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares import verify_request_middleware
+from middlewares import rate_limiter_middleware, verify_request_middleware
 from modules import Blueprint, make_response, request
 from repository.collection_repository import (
     _add_post_to_collection,
@@ -18,6 +18,7 @@ route = API_ENDPOINTS()
 @collection_blueprint.route(
     route.collection.route_name, methods=route.collection.methods
 )
+@rate_limiter_middleware(route.collection, exponential=True)
 @verify_request_middleware(route.collection)
 def collection(logged_user: LoggedUser, *args, **kwargs):
     return make_response({}, 201)
@@ -27,6 +28,7 @@ def collection(logged_user: LoggedUser, *args, **kwargs):
 @collection_blueprint.route(
     route.collection_create.route_name, methods=route.collection_create.methods
 )
+@rate_limiter_middleware(route.collection_create, exponential=True)
 @verify_request_middleware(route.collection_create)
 def create_collection(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -45,6 +47,7 @@ def create_collection(logged_user: LoggedUser, *args, **kwargs):
     route.collection_add_post.route_name,
     methods=route.collection_add_post.methods,
 )
+@rate_limiter_middleware(route.collection_add_post, exponential=True)
 @verify_request_middleware(route.collection_add_post)
 def add_post(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -62,6 +65,7 @@ def add_post(logged_user: LoggedUser, *args, **kwargs):
     f"{route.collection_remove_post.route_name}",
     methods=route.collection_remove_post.methods,
 )
+@rate_limiter_middleware(route.collection_remove_post, exponential=True)
 @verify_request_middleware(route.collection_remove_post)
 def remove_posts(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -81,6 +85,7 @@ def remove_posts(logged_user: LoggedUser, *args, **kwargs):
     route.collection_delete.route_name,
     methods=route.collection_delete.methods,
 )
+@rate_limiter_middleware(route.collection_delete, exponential=True)
 @verify_request_middleware(route.collection_delete)
 def delete_collection(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id

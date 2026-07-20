@@ -37,8 +37,7 @@ route = API_ENDPOINTS()
 
 # auth/signup
 @auth_blueprint.route(route.auth_signup.route_name, methods=route.auth_signup.methods)
-@rate_limiter_middleware(route.auth_signup)
-@verify_request_middleware(route.auth_signup)
+@rate_limiter_middleware(route.auth_signup, exponential=True)
 def signup():
     body: dict = request.get_json()
     name = body.get("name")
@@ -67,6 +66,7 @@ def signup():
 
 # /auth/login
 @auth_blueprint.route(route.auth_login.route_name, methods=route.auth_login.methods)
+@rate_limiter_middleware(route.auth_login, exponential=True)
 def login():
     body: dict[str, str] = request.get_json()
     username = body.get("username")
@@ -82,7 +82,8 @@ def login():
 
 # /auth/logout
 @auth_blueprint.route(route.auth_logout.route_name, methods=route.auth_logout.methods)
-@verify_request_middleware(route.auth_logout.route_name)
+@rate_limiter_middleware(route.auth_logout, exponential=True)
+@verify_request_middleware(route.auth_logout)
 def logout(logged_user: LoggedUser, *args, **kwargs):
     # Get refresh token from logged_user
     refresh_token = logged_user.kwargs["refresh_token"]
@@ -103,6 +104,7 @@ def logout(logged_user: LoggedUser, *args, **kwargs):
 
 # /auth/refresh
 @auth_blueprint.route(route.auth_refresh.route_name, methods=route.auth_refresh.methods)
+@rate_limiter_middleware(route.auth_refresh, exponential=True)
 def refresh_token():
     # for web, mobile
     refresh_token = request.cookies.get("refresh-token") or request.headers.get(
@@ -119,6 +121,7 @@ def refresh_token():
 @auth_blueprint.route(
     route.auth_generate_otp.route_name, methods=route.auth_generate_otp.methods
 )
+@rate_limiter_middleware(route.auth_generate_otp, exponential=True)
 def generate_otp():
     body = request.get_json()
     user_id = body.get("user_id")
@@ -130,6 +133,7 @@ def generate_otp():
     route.auth_verify_otp.route_name,
     methods=route.auth_verify_otp.methods,
 )
+@rate_limiter_middleware(route.auth_verify_otp, exponential=True)
 def verify():
     body = request.get_json()
     user_id = body.get("user_id")
@@ -141,7 +145,8 @@ def verify():
 @auth_blueprint.route(
     route.auth_current_user.route_name, methods=route.auth_current_user.methods
 )
-@verify_request_middleware(route.auth_current_user.route_name)
+@rate_limiter_middleware(route.auth_current_user, exponential=True)
+@verify_request_middleware(route.auth_current_user)
 def userSessionInfo(logged_user: LoggedUser, *args, **kwargs):
     user_id = logged_user.user_id
     return _get_user_profile(

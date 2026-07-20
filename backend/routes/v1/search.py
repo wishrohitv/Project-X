@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares import verify_request_middleware
+from middlewares import rate_limiter_middleware, verify_request_middleware
 from modules import Blueprint, request
 from repository.search_repository import (
     _posts_by_hashtag,
@@ -18,6 +18,7 @@ route = API_ENDPOINTS()
 
 # /search GET
 @search_blueprint.route(route.search.route_name, methods=route.search.methods)
+@rate_limiter_middleware(route.search, limit=12)
 @verify_request_middleware(route.search)
 def search(logged_user: LoggedUser | None):
     session_user_id = logged_user.user_id if logged_user else None
@@ -44,6 +45,7 @@ def search(logged_user: LoggedUser | None):
 @search_blueprint.route(
     route.search_suggestion.route_name, methods=route.search_suggestion.methods
 )
+@rate_limiter_middleware(route.search_suggestion, limit=12)
 def search_predict():
     query = request.args.get("q")
     if not query or query.strip() == "":
@@ -53,6 +55,7 @@ def search_predict():
 
 # /trending GET
 @search_blueprint.route(route.trending.route_name, methods=route.trending.methods)
+@rate_limiter_middleware(route.trending, limit=12)
 def trending():
     # TODO: Fetch trending hashtags(text prefix with #) by filtering post text
     """
@@ -66,6 +69,7 @@ def trending():
 @search_blueprint.route(
     route.trending_posts.route_name, methods=route.trending_posts.methods
 )
+@rate_limiter_middleware(route.trending_posts, limit=12)
 def trending_posts(hash_tag: str):
     """
     Trending posts

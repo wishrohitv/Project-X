@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares import verify_request_middleware
+from middlewares import rate_limiter_middleware, verify_request_middleware
 from modules import Blueprint, request
 from repository.notification_repository import (
     _get_notifications,
@@ -25,6 +25,7 @@ logger = Logging(__name__)
 @notification_blueprint.route(
     f"{route.notifications.route_name}", methods=route.notifications.methods
 )
+@rate_limiter_middleware(route.notifications)
 @verify_request_middleware(route.notifications)
 def get_notifications(logged_user: LoggedUser, *args, **kwargs):
 
@@ -41,6 +42,7 @@ def get_notifications(logged_user: LoggedUser, *args, **kwargs):
     f"{route.notifications_unread_count.route_name}",
     methods=route.notifications_unread_count.methods,
 )
+@rate_limiter_middleware(route.notifications_unread_count)
 @verify_request_middleware(route.notifications_unread_count)
 def unread_count_notifications(logged_user: LoggedUser, *args, **kwargs):
 
@@ -52,6 +54,7 @@ def unread_count_notifications(logged_user: LoggedUser, *args, **kwargs):
 @notification_blueprint.route(
     route.notifications_track.route_name, methods=route.notifications_track.methods
 )
+@rate_limiter_middleware(route.notifications_track)
 @verify_request_middleware(route.notifications_track)
 def track_notification_click(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id

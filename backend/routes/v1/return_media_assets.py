@@ -1,3 +1,4 @@
+from middlewares import rate_limiter_middleware
 from modules import (
     PUBLIC_DIRECTORY_POSTS,
     PUBLIC_DIRECTORY_PROFILES,
@@ -12,9 +13,11 @@ from modules import (
     url_for,
 )
 from repository.post_repository import _get_post_media
-from utils import Log
+from utils import Logging
 
 return_media_assets_blueprint = Blueprint("return_assets", __name__)
+
+Log = Logging(__name__)
 
 
 @return_media_assets_blueprint.route("/get_post_media/<int:post_id>")

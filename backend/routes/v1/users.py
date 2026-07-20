@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS
-from middlewares import verify_request_middleware
+from middlewares import rate_limiter_middleware, verify_request_middleware
 from modules import (
     ALLOWED_PROFILE_FILE_MIMETYPE,
     ALLOWED_PROFILE_FILE_SIZE,
@@ -38,11 +38,12 @@ route = API_ENDPOINTS()
 
 # /users/<string:username>
 @users_blueprint.route(f"{route.user.route_name}", methods=route.user.methods)
+@rate_limiter_middleware(route.user)
 @verify_request_middleware(route.user)
 def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwargs):
     username: str | None = kwargs["username"] or request.args.get("username")
-    user_id = request.args.get("user_id")
-    user_email: str | None = request.args.get("email_id")
+    user_id: int | None = request.args.get("user_id", None, type=int)
+    user_email: str | None = request.args.get("email_id", None, type=str)
 
     if not username and not user_id and not user_email:
         raise BadRequestError("Expect any value of username, user_id, email_id")
@@ -50,7 +51,7 @@ def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwar
     if user_id:
         try:
             user_id = int(user_id)
-        except:
+        except Exception:
             raise BadRequestError(f"Invalid id {user_id} datatype")
 
     return _get_user_profile(
@@ -63,6 +64,7 @@ def user_get_profile_detail(logged_user: LoggedUser | None = None, *args, **kwar
 
 # /user PUT
 @users_blueprint.route(route.user_update.route_name, methods=route.user_update.methods)
+@rate_limiter_middleware(route.user_update)
 @verify_request_middleware(route.user_update)
 def users_update_info(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -86,6 +88,7 @@ def users_update_info(logged_user: LoggedUser, *args, **kwargs):
 @users_blueprint.route(
     route.user_change_profile.route_name, methods=route.user_change_profile.methods
 )
+@rate_limiter_middleware(route.user_change_profile)
 @verify_request_middleware(route.user_change_profile)
 def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
     profile_media_uid = str(uuid.uuid4())
@@ -130,6 +133,7 @@ def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
 
 # /user DELETE
 @users_blueprint.route(route.user_delete.route_name, methods=route.user_delete.methods)
+@rate_limiter_middleware(route.user_delete)
 @verify_request_middleware(route.user_delete)
 def users_delete():
     raise NotImplementedError()
@@ -139,6 +143,7 @@ def users_delete():
 @users_blueprint.route(
     route.user_remove_follower.route_name, methods=route.user_remove_follower.methods
 )
+@rate_limiter_middleware(route.user_remove_follower)
 @verify_request_middleware(route.user_remove_follower)
 def remove_follower(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -153,6 +158,7 @@ def remove_follower(logged_user: LoggedUser, *args, **kwargs):
 @users_blueprint.route(
     route.user_add_follower.route_name, methods=route.user_add_follower.methods
 )
+@rate_limiter_middleware(route.user_add_follower)
 @verify_request_middleware(route.user_add_follower)
 def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
     session_user_id = logged_user.user_id
@@ -166,6 +172,7 @@ def add_follower(logged_user: LoggedUser, *agrs, **kwargs):
 
 # /users/<int:user_id>/block POST
 @users_blueprint.route(route.user_block.route_name, methods=route.user_block.methods)
+@rate_limiter_middleware(route.user_block)
 @verify_request_middleware(route.user_block)
 def block_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -179,6 +186,7 @@ def block_user(logged_user: LoggedUser, *args, **kwargs):
 @users_blueprint.route(
     route.user_unblock.route_name, methods=route.user_unblock.methods
 )
+@rate_limiter_middleware(route.user_unblock)
 @verify_request_middleware(route.user_unblock)
 def unblock_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -194,6 +202,7 @@ def unblock_user(logged_user: LoggedUser, *args, **kwargs):
     route.user_report_users.route_name,
     methods=route.user_report_users.methods,
 )
+@rate_limiter_middleware(route.user_report_users)
 @verify_request_middleware(route.user_report_users)
 def report_user(logged_user: LoggedUser, *args, **kwargs):
     session_user_id = logged_user.user_id
@@ -208,5 +217,6 @@ def report_user(logged_user: LoggedUser, *args, **kwargs):
     route.user_avatar.route_name,
     methods=route.user_avatar.methods,
 )
+@rate_limiter_middleware(route.user_avatar, limit=14)
 def send_avatar_url(username: str):
     return _get_user_avatar(username)
