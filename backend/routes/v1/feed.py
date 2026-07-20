@@ -1,6 +1,6 @@
 from config import API_ENDPOINTS
-from middlewares.verify_client_request import verify_request_middleware
-from modules import Blueprint, make_response, request
+from middlewares import rate_limiter_middleware, verify_request_middleware
+from modules import Blueprint, request
 from repository.feed_repository import _get_home_feed
 from utils import BadRequestError, LoggedUser, SuccessResponse
 
@@ -11,7 +11,8 @@ route = API_ENDPOINTS()
 
 # /feed GET
 @feed_blueprint.route(route.feed.route_name, methods=route.feed.methods)
-@verify_request_middleware(route.feed.route_name)
+@rate_limiter_middleware(route.feed)
+@verify_request_middleware(route.feed)
 def getFeed(logged_user: LoggedUser | None = None, *args, **kwargs):
     """
     Check if user is logged then build home feed based on his interests

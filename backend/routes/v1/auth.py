@@ -1,5 +1,5 @@
 from config import API_ENDPOINTS, ROLE
-from middlewares.verify_client_request import verify_request_middleware
+from middlewares import rate_limiter_middleware, verify_request_middleware
 from models import AccountStatus
 from modules import (
     ACCESS_TOKEN_EXPIRY_MINUTES,
@@ -37,6 +37,8 @@ route = API_ENDPOINTS()
 
 # auth/signup
 @auth_blueprint.route(route.auth_signup.route_name, methods=route.auth_signup.methods)
+@rate_limiter_middleware(route.auth_signup)
+@verify_request_middleware(route.auth_signup)
 def signup():
     body: dict = request.get_json()
     name = body.get("name")
