@@ -19,6 +19,6 @@ class Settings:
 
     GEMINI_API_KEY: str | None = os.environ.get("GEMINI_API_KEY")
     GEMINI_MODEL_NAME: str | None = os.environ.get("GEMINI_MODEL_NAME")
-    REDIS_URL: str | None = os.environ.get("REDIS_URL")
+    REDIS_URL: str = os.environ.get("REDIS_URL", "redis://localhost:6379")
     RESEND_API_KEY: str | None = os.environ.get("RESEND_API_KEY")
     CLOUDINARY_URL: str | None = os.environ.get("CLOUDINARY_URL")
