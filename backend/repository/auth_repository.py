@@ -20,7 +20,6 @@ from modules import (
     func,
     jsonify,
     jwt,
-    make_response,
     or_,
     os,
     request,
@@ -168,7 +167,6 @@ def _signup_user(
         raise
     except Exception as e:
         session.rollback()
-        # TODO: Log the exception
         raise InternalServerError("Error while creating user") from e
     finally:
         # Close the session
