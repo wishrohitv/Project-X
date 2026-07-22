@@ -384,21 +384,10 @@ class API_ENDPOINTS:
     @property
     def api_endpoints(self) -> dict[str, RouteAccess]:
         """
-        endpoint name : route name
+        endpoint variable name : route access object
         """
         return {
-            v.route_name: v
-            for k, v in self.__class__.__dict__.items()
-            if isinstance(v, RouteAccess)
-        }
-
-    @property
-    def api_endpoints_partial_access(self) -> dict[str, bool]:
-        """
-        endpoint name : access rule
-        """
-        return {
-            v.route_name: v.partial_access
+            k: v
             for k, v in self.__class__.__dict__.items()
             if isinstance(v, RouteAccess)
         }
