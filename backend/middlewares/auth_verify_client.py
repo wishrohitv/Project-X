@@ -10,8 +10,6 @@ from utils import (
     decode_jwt_token,
 )
 
-apiEndpointsPartialAccess = API_ENDPOINTS().api_endpoints_partial_access
-
 
 def verify_request_middleware(route: RouteAccess):
     # below decorator
@@ -44,9 +42,7 @@ def verify_request_middleware(route: RouteAccess):
                     user_role = decoded_token["payload"]["role"]
 
                     # Match the user id and role for this endpoint
-                    has_access_right = get_user_role(
-                        route.route_name, user_id, user_role
-                    )
+                    has_access_right = get_user_role(route, user_id, user_role)
 
                     if has_access_right:
                         return func(
@@ -67,7 +63,7 @@ def verify_request_middleware(route: RouteAccess):
                 else:
                     raise UnAuthorizedError("Auth token expired")
 
-            elif apiEndpointsPartialAccess.get(route.route_name):
+            elif route.partial_access:
                 # Give user partial access
                 return func(
                     logged_user=None,
