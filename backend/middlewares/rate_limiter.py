@@ -1,5 +1,6 @@
 from database import redis_client
-from modules import request
+from modules import functools, request
+from settings import Settings
 from utils import RateLimitExceededError, RouteAccess
 
 
@@ -17,8 +18,9 @@ def rate_limiter_middleware(
     """
 
     def route_funtion(func):
+        @functools.wraps(func)
         def wrapper(*args, **kwargs):
-            key = f"rate_limit_endpoint:{route.route_name}:{request.remote_addr}"
+            key = f"rate_limit_endpoint:{request.path}:{request.remote_addr}"
             count = redis_client.incr(key)
             ttl = redis_client.ttl(key)
             if count == 1:
@@ -27,7 +29,7 @@ def rate_limiter_middleware(
                 if exponential:
                     redis_client.expire(key, ttl + period)
                 raise RateLimitExceededError(
-                    f"Rate limit exceeded for endpoint {route.route_name}, try after {ttl} seconds"
+                    f"Rate limit exceeded for endpoint {request.path if Settings.DEBUG else ''}, try after {redis_client.ttl(key)} seconds"
                 )
             return func(*args, **kwargs)
 
