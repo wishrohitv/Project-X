@@ -16,7 +16,7 @@ def get_user_role(route: RouteAccess, user_id: int, user_role: int) -> bool:
 
     try:
         user = session.query(Users).where(Users.id == user_id).first()
-        session.close()
+
         if user:
             if user.account_status == AccountStatus.banned:
                 raise ForbiddenError("Account is banned")
@@ -30,7 +30,6 @@ def get_user_role(route: RouteAccess, user_id: int, user_role: int) -> bool:
             raise ResourceNotFoundError("Account not found")
 
         # Check user role
-        # TODO: match user endpoint along with request method
         get_role = (
             select(
                 Accessibility.endpoint_id,
@@ -48,11 +47,12 @@ def get_user_role(route: RouteAccess, user_id: int, user_role: int) -> bool:
             )
         )
         accessibility_rule = session.execute(get_role).first()
+
         # check if accessibility_rule not null
         if accessibility_rule:
             # accessibility_rule -> (15, [1, 2, 3], False, '/posts/uploadPosts', ['POST'])
-            _partial_access: bool = accessibility_rule[2]
-            _user_role: list[int] = accessibility_rule[1]
+            _partial_access: bool = accessibility_rule.partial_access
+            _user_role: list[int] = accessibility_rule.roles
             if user_role in _user_role:
                 return True
             else:
