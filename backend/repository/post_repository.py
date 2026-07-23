@@ -20,6 +20,7 @@ from modules import (
     func,
     functools,
     json,
+    literal,
     make_response,
     or_,
     os,
@@ -38,7 +39,6 @@ from utils import (
     BadRequestError,
     ForbiddenError,
     InternalServerError,
-    Log,
     ResourceNotFoundError,
     SuccessResponse,
     UnAuthorizedError,
@@ -567,6 +567,7 @@ def _fetch_post_users(
     limit: int = 10,
     offset: int = 0,
 ):
+    print("limit{}, offset {}".format(limit, offset))
     session = SessionLocal()
     # TODO: prevent access of data if post is unavailable
     try:
@@ -585,7 +586,9 @@ def _fetch_post_users(
                             Follower.user_id == Users.id,
                             Follower.follower_id == session_user_id,
                         )
-                    ).label("is_following"),
+                    ).label("is_following")
+                    if session_user_id
+                    else literal(False).label("is_following"),
                 )
                 .join_from(Users, Profile, Users.id == Profile.id)
                 .join_from(Users, join_model, join_condition)
@@ -594,7 +597,9 @@ def _fetch_post_users(
             .limit(limit)
             .offset(offset)
         )
+
         result = session.execute(stmt).all()
+
         fetched_users = [
             {
                 "user_id": user.id,
@@ -602,7 +607,7 @@ def _fetch_post_users(
                 "name": user.name,
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', file_name=f'{user.media_public_id}.{user.file_extension}')}",
+                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
                 "media_public_id": user.media_public_id,
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,
@@ -611,9 +616,9 @@ def _fetch_post_users(
             for user in result
         ]
         return SuccessResponse(
-            data=json.dumps(fetched_users), message="Fetched data", status_code=200
+            data=fetched_users, message="Fetched data", status_code=200
         )
-    except Exception as e:
+    except Exception:
         raise
     finally:
         session.close()

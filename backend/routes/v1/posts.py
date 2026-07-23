@@ -34,7 +34,6 @@ from utils import (
     BadRequestError,
     ConflictError,
     InternalServerError,
-    Log,
     LoggedUser,
     ResourceNotFoundError,
     SuccessResponse,
@@ -89,7 +88,7 @@ def post_liked_user(logged_user: LoggedUser | None, *args, **kwargs):
     if limit >= 20:
         raise BadRequestError("Limit must be less than or equal to 20")
 
-    return _get_post_liked_users(post_id, session_user_id, offset, limit)
+    return _get_post_liked_users(post_id, session_user_id, limit, offset)
 
 
 # /posts/<int:post_id>/bookmarked-users GET
