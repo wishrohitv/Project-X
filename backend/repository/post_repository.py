@@ -567,7 +567,7 @@ def _fetch_post_users(
     limit: int = 10,
     offset: int = 0,
 ):
-    print("limit{}, offset {}".format(limit, offset))
+
     session = SessionLocal()
     # TODO: prevent access of data if post is unavailable
     try:
@@ -618,8 +618,7 @@ def _fetch_post_users(
         return SuccessResponse(
             data=fetched_users, message="Fetched data", status_code=200
         )
-    except Exception:
-        raise
+
     finally:
         session.close()
 
