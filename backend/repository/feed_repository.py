@@ -124,7 +124,7 @@ def _query_posts(
                 "user": {
                     "profile_img_url": feed[2]
                     if USE_CLOUDINARY_STORAGE
-                    else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{feed[3]}.{feed[4]}')}",
+                    else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{feed[3]}.{feed[4]}')}",
                     "username": feed[0],
                     "user_id": feed[1].user_id,
                 },
@@ -149,7 +149,7 @@ def _query_posts(
                     "is_template": feed[1].is_template,
                     "post_media_url": feed[1].media_url
                     if USE_CLOUDINARY_STORAGE
-                    else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
+                    else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
                     "like_count": feed[5],
                     "repost_count": feed[6],
                     "bookmark_count": feed[7],
@@ -164,8 +164,6 @@ def _query_posts(
 
         return feed_obj
 
-    except Exception as e:
-        raise
     finally:
         session.close()
 
@@ -207,26 +205,30 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
 
         result = session.execute(stmt).fetchone()
         if not result:
-            return {"error": "Post not found"}
+            return {"status": 204, "message": "No posts found"}
 
         post = {
-            "username": result[0],
-            "post_id": result[1].id,
-            "title": result[1].text,
-            "user_id": result[1].user_id,
-            "file_type": result[1].file_type,
-            "media_public_id": result[1].media_public_id,
-            "file_extension": result[1].file_extension,
-            "created_at": result[1].created_at.isoformat(),
-            "age_rating": result[
-                1
-            ].age_rating.value,  # Return Enum class from db and get its value from
-            "post_media_url": result[1].media_url
-            if USE_CLOUDINARY_STORAGE
-            else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_post_media', filename=f'{result[1].media_public_id}.{result[1].file_extension}')}",
-            "profile_img_url": result[2]
-            if USE_CLOUDINARY_STORAGE
-            else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{result[3]}.{result[4]}')}",
+            "user": {
+                "username": result[0],
+                "user_id": result[1].user_id,
+                "profile_img_url": result[2]
+                if USE_CLOUDINARY_STORAGE
+                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{result[3]}.{result[4]}')}",
+            },
+            "post": {
+                "post_id": result[1].id,
+                "title": result[1].text,
+                "file_type": result[1].file_type,
+                "media_public_id": result[1].media_public_id,
+                "file_extension": result[1].file_extension,
+                "created_at": result[1].created_at.isoformat(),
+                "age_rating": result[
+                    1
+                ].age_rating.value,  # Return Enum class from db and get its value from
+                "post_media_url": result[1].media_url
+                if USE_CLOUDINARY_STORAGE
+                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=f'{result[1].media_public_id}.{result[1].file_extension}')}",
+            },
         }
         return {"status": 200, "data": post}
     except Exception as e:
