@@ -22,6 +22,7 @@ from modules import (
     exists,
     func,
     functools,
+    json,
     jsonify,
     make_response,
     or_,
@@ -34,7 +35,6 @@ from modules import (
     url_for,
 )
 from services.cloudinary_service import delete_media
-from services.mail_service import send_otp
 from tasks import add_task_in_queue
 from tasks.interface import follow
 from utils import (
@@ -42,15 +42,12 @@ from utils import (
     BadRequestError,
     ConflictError,
     InternalServerError,
-    LoggedUser,
+    Logging,
     ResourceNotFoundError,
     SuccessResponse,
-    decode_jwt_token,
-    generate_jwt_token,
-    generate_otp,
-    match_password,
-    return_hashed_bytes,
 )
+
+Log = Logging(__name__)
 
 
 def _add_follower(session_user_id: int, user_id: int):
@@ -167,6 +164,15 @@ def _get_user_profile(
     """
 
     session = SessionLocal()
+
+    redis_key = f"user:{_user_id or _username or _email}"
+    cached_user = redis_client.get(redis_key)
+    if cached_user:
+        Log.info(f"Cache hit for user: {redis_key}")
+        return SuccessResponse(
+            data=json.loads(cached_user), message="Fetched user detail successfully"
+        )
+
     try:
         # User's follower count
         follower_count = aliased(Follower)
@@ -209,31 +215,30 @@ def _get_user_profile(
             .outerjoin(Profile, Profile.user_id == Users.id)
             .group_by(Users.id, Profile.id)
         )
-        users = session.execute(stmt).all()
+        user = session.execute(stmt).first()
 
-        if users:
-            usersDict = [
-                {
-                    "user_id": user[0].id,
-                    "name": user[0].name,
-                    "username": user[0].username,
-                    "email": user[0].email if session_user_id == user[0].id else "",
-                    "join_date": user[0].created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                    "role": user[0].role,
-                    "account_status": user[0].account_status.value,
-                    "bio": user[1],
-                    "country": user[2],
-                    "profile_img_url": user[3]
-                    if USE_CLOUDINARY_STORAGE
-                    else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[4]}.{user[5]}')}",
-                    "follower_count": user[6],
-                    "following_count": user[7],
-                    "is_following": user[8],
-                }
-                for user in users
-            ]
+        if user:
+            usersDict = {
+                "user_id": user[0].id,
+                "name": user[0].name,
+                "username": user[0].username,
+                "email": user[0].email if session_user_id == user[0].id else "",
+                "join_date": user[0].created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "role": user[0].role,
+                "account_status": user[0].account_status.value,
+                "bio": user[1],
+                "country": user[2],
+                "profile_img_url": user[3]
+                if USE_CLOUDINARY_STORAGE
+                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user[4]}.{user[5]}')}",
+                "follower_count": user[6],
+                "following_count": user[7],
+                "is_following": user[8],
+            }
+            redis_client.set(redis_key, json.dumps(usersDict), ex=100)
+            Log.info(f"Cache miss for user: {redis_key}")
             return SuccessResponse(
-                data=usersDict[0], message="Fetched user detail successfully"
+                data=usersDict, message="Fetched user detail successfully"
             )
         else:
             raise ResourceNotFoundError("User does not exist")
@@ -311,12 +316,12 @@ def _update_user(
         user = session.query(Users).where(Users.id == session_user_id).first()
         if not user:
             raise ResourceNotFoundError("User does not exist")
-
+        redis_key = f"user:{user.username}"
         if name:
             # Update the name
             user.name = name
             session.commit()
-            session.close()
+
         update_obj = {}
         if bio:
             update_obj["bio"] = bio
@@ -325,7 +330,7 @@ def _update_user(
         if country:
             update_obj["country"] = country
 
-        if len(update_obj) > 0:
+        if update_obj:
             stmt = (
                 update(Profile)
                 .where(Profile.user_id == session_user_id)
@@ -333,7 +338,7 @@ def _update_user(
             )
             session.execute(stmt)
             session.commit()
-
+        redis_client.delete(redis_key)
         return SuccessResponse(
             message="user updated successfully", status_code=201, data={}
         )
