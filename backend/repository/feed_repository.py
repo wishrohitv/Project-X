@@ -1,4 +1,4 @@
-from database import SessionLocal
+from database import SessionLocal, redis_client
 from models import Bookmark, Category, Likes, Posts, Profile, Reposts, Users
 from modules import (
     API_ROOT_URL,
@@ -7,13 +7,20 @@ from modules import (
     exists,
     func,
     json,
-    make_response,
     request,
     select,
     sessionmaker,
     url_for,
 )
-from utils import AppError, BadRequestError, InternalServerError, SuccessResponse
+from utils import (
+    AppError,
+    BadRequestError,
+    InternalServerError,
+    Logging,
+    SuccessResponse,
+)
+
+Log = Logging(__name__)
 
 
 def _get_home_feed(
@@ -24,13 +31,30 @@ def _get_home_feed(
     session_user_id: int | None = None,
 ):
     session = SessionLocal()
+
+    redis_key = f"home_feed:{offset}:{limit}"
+    cached_feed = redis_client.get(redis_key)
+    if cached_feed:
+        Log.info("Redis hit: returning cached home feed")
+        return SuccessResponse(
+            data=json.loads(cached_feed),
+            message="Home feed fetched successfully",
+            status_code=200,
+        )
+
     try:
         # Fetch only public posts and isReply false
-        conditions = [Posts.visibility, Posts.is_reply.is_(False)]
+        conditions = [
+            Posts.visibility,
+            Posts.is_reply.is_(False),
+            Posts.is_deleted.is_(False),
+        ]
         if fetch_template:
             conditions.append(Posts.is_template.is_(True))
         feed = _query_posts(conditions, category, offset, limit, session_user_id)
 
+        Log.info("Redis miss: fetching home feed from database")
+        redis_client.set(redis_key, json.dumps(feed), ex=100)
         return SuccessResponse(
             data=feed, message="Home feed fetched successfully", status_code=200
         )
@@ -182,7 +206,7 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
             if not post:
                 return {"status": 404, "error": "Post not found"}
 
-            if not post.user_id == session_user_id:
+            if post.user_id == session_user_id:
                 # Check whether post's visibility is true or false
                 if not post.visibility:
                     return {"status": 403, "error": "Post is private"}
