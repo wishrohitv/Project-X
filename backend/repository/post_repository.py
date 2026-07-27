@@ -1,4 +1,4 @@
-from database import SessionLocal
+from database import SessionLocal, redis_client
 from models import (
     AgeRating,
     Bookmark,
@@ -26,7 +26,7 @@ from modules import (
     os,
     request,
     select,
-    sessionmaker,
+    time,
     update,
     url_for,
 )
@@ -39,12 +39,15 @@ from utils import (
     BadRequestError,
     ForbiddenError,
     InternalServerError,
+    Logging,
     ResourceNotFoundError,
     SuccessResponse,
     UnAuthorizedError,
 )
 
 from .feed_repository import _query_posts
+
+Log = Logging(__name__)
 
 
 def _create_post(
@@ -348,6 +351,17 @@ def _user_posts(
     if user is logged but session_user_id != username then fetch public posts only
     else fetch public posts only
     """
+    redis_key = f"user_posts:{username}:{session_user_id}:{category}:{order_by}:{fetch_template}:{fetch_bookmarked}:{limit}:{offset}"
+
+    cached_result = redis_client.get(redis_key)
+
+    if cached_result:
+        _posts = json.loads(cached_result)
+        Log.info(f"Cache hit for user_posts: {redis_key}")
+        return SuccessResponse(
+            data=_posts, message="Fetched user's post", status_code=200
+        )
+
     try:
         conditions = []
         if fetch_template:
@@ -377,6 +391,9 @@ def _user_posts(
             limit=limit,
             session_user_id=session_user_id,
         )
+        redis_client.set(redis_key, json.dumps(posts), ex=100)
+
+        Log.info(f"Cache miss for user_posts: {redis_key}")
 
         return SuccessResponse(
             data=posts, message="Fetched user's post", status_code=200
@@ -408,64 +425,130 @@ def _get_post_media(
             return None
         return tuple(post)
     except Exception as e:
-        print(f"Error fetching post media: {e}")
-        return None
+        raise InternalServerError("Error while fetching post media url") from e
     finally:
         session.close()
 
 
-def _get_post_by_id_or_post_replies_by_id(
+def _get_post_by_id(
     post_id: int,
     session_user_id: int | None = None,
-    fetch_replies: bool = False,
+):
+    session = SessionLocal()
+    redis_key = f"post:{post_id}"
+    post = redis_client.get(redis_key)
+    if post:
+        Log.info(f"Redis hit for post id: {post_id}")
+        return SuccessResponse(
+            message="Post retrieved successfully",
+            data=json.loads(post),
+            status_code=200,
+        )
+    try:
+        conditions = []
+        # Fetch post by ID
+        conditions.append(Posts.id == post_id)
+        conditions.append(Posts.is_deleted == False)
+
+        # Check post visibility
+        if session_user_id:
+            # Check owner of the post
+            post = (
+                session.query(Posts)
+                .where(Posts.id == post_id, Posts.is_deleted == False)
+                .first()
+            )
+
+            if not post:
+                raise ResourceNotFoundError("Post not found")
+
+            if post.user_id == session_user_id:
+                # Give the access to the private post to owner
+                # Note : implement superadmin and moderator can access private post for enquiry
+                pass
+            else:
+                # Check whether post's visibility is true or false
+                if not post.visibility:
+                    raise ForbiddenError("Post is private")
+        else:
+            conditions.append(Posts.visibility == True)
+
+        posts = _query_posts(
+            conditions=conditions,
+            session_user_id=session_user_id,
+        )
+        Log.info(f"Redis miss for post id: {post_id}")
+        if posts:
+            if len(posts) == 0:
+                return SuccessResponse(
+                    message="No post dosen't exists",
+                    data={},
+                    status_code=204,
+                )
+
+            redis_client.set(redis_key, json.dumps(posts[0]), 300)
+            return SuccessResponse(
+                message="Post retrieved successfully",
+                data=posts[0],
+                status_code=200,
+            )
+        else:
+            raise ResourceNotFoundError("Post not found")
+    except AppError:
+        session.rollback()
+        raise
+    except Exception as e:
+        raise InternalServerError("Error while fetching posts by id") from e
+    finally:
+        session.close()
+
+
+def _get_post_replies(
+    post_id: int,
+    session_user_id: int | None = None,
     limit: int = 10,
     offset: int = 0,
 ):
     session = SessionLocal()
+    redis_key = f"post:{post_id}:{offset}:{limit}:{session_user_id}"
+
+    replies = redis_client.get(redis_key)
+    if replies:
+        Log.info(f"Redis hit for post replies :{post_id}")
+        return SuccessResponse(
+            message="Post retrieved successfully",
+            data=json.loads(replies),
+            status_code=200,
+        )
+
     try:
-        conditions = []
-        if fetch_replies:
-            conditions.append(Posts.parent_post_id == post_id)
-            conditions.append(
-                Posts.is_reply
-            )  # `not Posts.is_reply` is not working as false
-            conditions.append(Posts.visibility)  # Fetch only public posts
-        else:
-            #  Fetch post by ID
-            conditions.append(Posts.id == post_id)
+        conditions = [
+            Posts.parent_post_id == post_id,
+            Posts.is_deleted == False,
+            Posts.visibility, # Fetch only public posts
+            Posts.is_reply, # `not Posts.is_reply` is not working as false
 
-            # Check post visibility
-            if session_user_id:
-                # Check owner of the post
-                post = session.query(Posts).where(Posts.id == post_id).first()
-                if not post:
-                    raise ResourceNotFoundError("Post not found")
+        ]
 
-                if post.user_id == session_user_id:
-                    # Give the access to the private post to owner
-                    # Note : implement superadmin and moderator can access private post for enquiry
-                    conditions.append(not Posts.visibility)
-                else:
-                    # Check whether post's visibility is true or false
-                    if not post.visibility:
-                        raise ForbiddenError("Post is private")
-                    conditions.append(Posts.visibility)
-        posts_or_replies = _query_posts(
+        replies = _query_posts(
             conditions=conditions,
             offset=offset,
             limit=limit,
             session_user_id=session_user_id,
         )
-        if posts_or_replies:
-            if len(posts_or_replies) == 0:
+
+        if replies:
+            if len(replies) == 0:
                 return SuccessResponse(
                     message="No replies found or post dosen't exists",
-                    data={},
+                    data=[],
                     status_code=200,
                 )
+            redis_client.set(redis_key, json.dumps(replies), ex=100)
+            Log.info(f"Redis: miss replies for post :{post_id}")
             return SuccessResponse(
                 message="Post retrieved successfully",
-                data=posts_or_replies,
+                data=replies,
                 status_code=200,
             )
         else:
@@ -507,6 +590,16 @@ def _get_post_liked_users(
     limit: int = 10,
     offset: int = 0,
 ):
+    session = SessionLocal()
+    post = (
+        session.query(Posts)
+        .filter(Posts.id == post_id, Posts.visibility == True)
+        .first()
+    )
+    if not post:
+        raise ResourceNotFoundError("Post not found")
+    session.close()
+
     join_model = Likes
     join_condition = Users.id == Likes.user_id
     where_condition = [Likes.post_id == post_id]
@@ -521,6 +614,15 @@ def _get_post_reposted_users(
     limit: int = 10,
     offset: int = 0,
 ):
+    session = SessionLocal()
+    post = (
+        session.query(Posts)
+        .filter(Posts.id == post_id, Posts.visibility == True)
+        .first()
+    )
+    if not post:
+        raise ResourceNotFoundError("Post not found")
+    session.close()
     join_model = Reposts
     join_condition = Users.id == Reposts.user_id
     where_condition = [Reposts.post_id == post_id]
@@ -537,7 +639,7 @@ def _get_post_reqouted_users(
 ):
     join_model = Posts
     join_condition = Users.id == Posts.user_id
-    where_condition = [Posts.parent_post_id == post_id]
+    where_condition = [Posts.parent_post_id == post_id, Posts.visibility == True]
     return _fetch_post_users(
         join_model, join_condition, where_condition, session_user_id, limit, offset
     )
@@ -549,10 +651,19 @@ def _get_post_bookmarked_users(
     limit: int = 10,
     offset: int = 0,
 ):
+    session = SessionLocal()
+    post = (
+        session.query(Posts)
+        .filter(Posts.id == post_id, Posts.visibility == True)
+        .first()
+    )
+    if not post:
+        raise ResourceNotFoundError("Post not found")
+    session.close()
     join_model = Bookmark
     join_condition = Users.id == Bookmark.user_id
     where_condition = [
-        Bookmark.post_id == post_id
+        Bookmark.post_id == post_id,
     ]  # Changed Bookmark.user_id to Bookmark.post_id
     return _fetch_post_users(
         join_model, join_condition, where_condition, session_user_id, limit, offset
@@ -567,10 +678,20 @@ def _fetch_post_users(
     limit: int = 10,
     offset: int = 0,
 ):
-
     session = SessionLocal()
-    # TODO: prevent access of data if post is unavailable
+    start = time.perf_counter()
     try:
+        redis_key = f"post-detail:{request.path}:{request.remote_addr}"
+
+        cached_data = redis_client.get(redis_key)
+        if cached_data:
+            fetched_users = json.loads(cached_data)
+            Log.info(
+                f"Redis hit post's interected users: {(time.perf_counter() - start) * 1000:.2f} ms"
+            )
+            return SuccessResponse(
+                data=fetched_users, message="Fetched data", status_code=200
+            )
         stmt = (
             (
                 select(
@@ -597,9 +718,11 @@ def _fetch_post_users(
             .limit(limit)
             .offset(offset)
         )
-
         result = session.execute(stmt).all()
 
+        Log.info(
+            f"DB miss post's interected users: {(time.perf_counter() - start) * 1000:.2f} ms"
+        )
         fetched_users = [
             {
                 "user_id": user.id,
@@ -607,7 +730,7 @@ def _fetch_post_users(
                 "name": user.name,
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
+                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
                 "media_public_id": user.media_public_id,
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,
@@ -615,6 +738,7 @@ def _fetch_post_users(
             }
             for user in result
         ]
+        redis_client.set(redis_key, json.dumps(fetched_users), ex=800)
         return SuccessResponse(
             data=fetched_users, message="Fetched data", status_code=200
         )
