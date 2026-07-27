@@ -25,7 +25,7 @@ def init_db_setup():
         endpoint_obj_list = []
         for endpoint, routeAccess in API_ENDPOINTS().api_endpoints.items():
             endpoint_obj_list.append(
-                Endpoint(endpoint=endpoint, methods=routeAccess.methods)
+                Endpoint(endpoint=routeAccess.route_name, methods=routeAccess.methods)
             )
 
         session.add_all(endpoint_obj_list)
@@ -82,7 +82,6 @@ def init_db_setup():
             for key, user in users.items():
                 user_obj_list.append(
                     Users(
-                        id=user["id"],
                         username=user["username"],
                         email=user["email"],
                         password=secrets.token_bytes(16),
@@ -90,7 +89,6 @@ def init_db_setup():
                         is_verified=user["is_verified"],
                         name=user.get("name") or "",
                         profile=Profile(
-                            user_id=user["id"],
                             bio=user.get("bio") or "",
                             country=user.get("country") or "",
                         ),
