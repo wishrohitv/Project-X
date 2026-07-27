@@ -52,7 +52,7 @@ class Posts(Base):
 
     is_template: Mapped[bool] = mapped_column(default=False, nullable=False)
     is_deleted: Mapped[bool] = mapped_column(default=False, nullable=False)
-    deleted_on: Mapped[Optional[datetime]] = mapped_column(
+    deleted_at: Mapped[Optional[datetime]] = mapped_column(
         TIMESTAMP(timezone=True),
         nullable=True,
     )

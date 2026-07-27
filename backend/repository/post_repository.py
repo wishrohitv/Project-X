@@ -43,6 +43,7 @@ from utils import (
     ResourceNotFoundError,
     SuccessResponse,
     UnAuthorizedError,
+    datetime_utc
 )
 
 from .feed_repository import _query_posts
@@ -218,12 +219,13 @@ def _delete_post(post_id: int, session_user_id: int):
     # TODO : Handle edge case
     session = SessionLocal()
     try:
-        result = (
+        post = (
             session.query(Posts).filter_by(id=post_id, user_id=session_user_id).first()
         )
         # Check ownership of the post
-        if not result:
+        if not post:
             raise UnAuthorizedError("You do not have permission to delete this post")
+        """
         # Delete the media
         if USE_CLOUDINARY_STORAGE:
             delete_media([result.media_public_id])
@@ -234,6 +236,9 @@ def _delete_post(post_id: int, session_user_id: int):
             if os.path.exists(filepath):
                 os.remove(filepath)
         session.delete(result)
+        """
+        post.is_deleted = True
+        post.deleted_at = datetime_utc()
         session.commit()
     except AppError:
         session.rollback()
