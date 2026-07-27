@@ -8,7 +8,6 @@ from repository.notification_repository import (
 )
 from utils import (
     BadRequestError,
-    Log,
     LoggedUser,
     RateLimitExceededError,
     SuccessResponse,
