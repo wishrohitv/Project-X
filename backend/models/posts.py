@@ -51,6 +51,11 @@ class Posts(Base):
     )  # usernames of users who is being replied to this post i.e. ['user1', 'user2']
 
     is_template: Mapped[bool] = mapped_column(default=False, nullable=False)
+    is_deleted: Mapped[bool] = mapped_column(default=False, nullable=False)
+    deleted_on: Mapped[Optional[datetime]] = mapped_column(
+        TIMESTAMP(timezone=True),
+        nullable=True,
+    )
     created_at: Mapped[datetime] = mapped_column(
         TIMESTAMP(timezone=True),
         default=datetime_utc,
@@ -76,6 +81,8 @@ class Posts(Base):
                     'category': {self.category!r},
                     'replying_to': {self.replying_to!r},
                     'is_template': {self.is_template!r},
+                    'is_deleted': {self.is_deleted!r},
+                    'deleted_on': {self.deleted_on!r},
                     'created_at': {self.created_at!r},
                     'updated_at': {self.updated_at!r},
                 )"""
