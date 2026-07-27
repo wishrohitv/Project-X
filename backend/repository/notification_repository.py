@@ -1,18 +1,19 @@
-from database import SessionLocal
+from database import SessionLocal, redis_client
 from models import Notifications
 from models.enums import NotificationType
-from modules import func, or_, select
+from modules import func, json, or_, select
 from utils import (
     AppError,
     BadRequestError,
     ConflictError,
     InternalServerError,
-    Log,
+    Logging,
     ResourceNotFoundError,
     SuccessResponse,
     datetime_utc,
 )
 
+Log = Logging(__name__)
 
 def _create_notification(
     user_id: int | None,
@@ -40,6 +41,18 @@ def _get_notifications(
     session_user_id: int, mention: bool = False, limit: int = 15, offset: int = 0
 ):
     session = SessionLocal()
+
+    redis_key = f"notifications:{session_user_id}:{offset}:{limit}:mention:{mention}"
+
+    cached_result = redis_client.get(redis_key)
+    if cached_result:
+        Log.info("Redis cache hit for notifications")
+        return SuccessResponse(
+            data=json.loads(cached_result),
+            message="Notification fetched successfully",
+            status_code=200,
+        )
+
     condition = []
     if mention:
         condition.append(Notifications.type == NotificationType.mention)
@@ -78,6 +91,8 @@ def _get_notifications(
             }
             for notice in result
         ]
+        Log.info("Redis cache miss for notifications")
+        redis_client.set(redis_key, json.dumps(notifications), ex=120)
         return SuccessResponse(
             data=notifications,
             message="Notification fetched successfully",
@@ -86,7 +101,6 @@ def _get_notifications(
     except AppError:
         raise
     except Exception as e:
-        Log.error(e)
         raise InternalServerError("Error while fetching notifications") from e
     finally:
         session.close()
@@ -115,7 +129,6 @@ def _track_notification_click(session_user_id: int, notification_id: int):
         raise
     except Exception as e:
         session.rollback()
-        Log.error(e)
         raise InternalServerError("Error while fetching notifications") from e
     finally:
         session.close()
@@ -132,7 +145,6 @@ def _unread_count_notification(session_user_id: int):
     except AppError:
         raise
     except Exception as e:
-        Log.error(e)
         raise InternalServerError("Error while fetching notifications") from e
     finally:
         session.close()
