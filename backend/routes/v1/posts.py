@@ -16,8 +16,9 @@ from repository.post_repository import (
     _create_post,
     _delete_post,
     _get_post_bookmarked_users,
-    _get_post_by_id_or_post_replies_by_id,
+    _get_post_by_id,
     _get_post_liked_users,
+    _get_post_replies,
     _get_post_reposted_users,
     _get_post_reqouted_users,
     _mark_post_as_template,
@@ -413,9 +414,7 @@ def posts_by_id(logged_user: LoggedUser | None = None, *args, **kwargs):
     post_id = kwargs["post_id"]
     session_user_id: int | None = logged_user.user_id if logged_user else None
 
-    return _get_post_by_id_or_post_replies_by_id(
-        post_id=post_id, session_user_id=session_user_id
-    )
+    return _get_post_by_id(post_id=post_id, session_user_id=session_user_id)
 
 
 # /posts/<int:post_id>/replies GET
@@ -427,8 +426,10 @@ def posts_by_id(logged_user: LoggedUser | None = None, *args, **kwargs):
 @verify_request_middleware(route.post_replies)
 def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
     post_id: int = kwargs["post_id"]
-
-    return _get_post_by_id_or_post_replies_by_id(post_id=post_id, fetch_replies=True)
+    session_user_id = logged_user.user_id if logged_user else None
+    offset = request.args.get("offset", type=int, default=0)
+    limit = request.args.get("limit", type=int, default=10)
+    return _get_post_replies(post_id=post_id, session_user_id=session_user_id, limit=limit, offset=offset)
 
 
 # /posts/<int:post_id>/report POST

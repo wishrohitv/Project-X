@@ -538,12 +538,6 @@ def _get_post_replies(
         )
 
         if replies:
-            if len(replies) == 0:
-                return SuccessResponse(
-                    message="No replies found or post dosen't exists",
-                    data=[],
-                    status_code=200,
-                )
             redis_client.set(redis_key, json.dumps(replies), ex=100)
             Log.info(f"Redis: miss replies for post :{post_id}")
             return SuccessResponse(
@@ -552,7 +546,11 @@ def _get_post_replies(
                 status_code=200,
             )
         else:
-            raise ResourceNotFoundError("Post not found")
+            return SuccessResponse(
+                message="Post retrieved successfully",
+                data=[],
+                status_code=200,
+            )
     except AppError:
         session.rollback()
         raise
