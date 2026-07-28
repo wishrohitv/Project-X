@@ -18,13 +18,11 @@ from modules import (
     delete,
     exists,
     func,
-    jsonify,
     jwt,
     or_,
     os,
     request,
     select,
-    sessionmaker,
     update,
 )
 from services.cloudinary_service import delete_media
@@ -211,7 +209,7 @@ def _generate_otp_for_user(user_id: int):
 
 def _verify_user(user_id: int, entered_otp: str):
     session = SessionLocal()
-    # TODO: check user's verification state then allow for login
+
     try:
         user = session.query(Users).filter(Users.id == user_id).first()
         if not user:
@@ -276,9 +274,7 @@ def _refresh_tokens(refresh_token: str):
         if not decoded_data:
             raise TokenExpiredError("Token expired, Please login again")
         user_id = decoded_data["payload"]["id"]
-        # TODO: check account status too
-        # if accountStatus == "active":
-        #     pass
+
         stmt = (
             select(Users, Sessions.refresh_token)
             .join_from(Users, Sessions)
@@ -329,15 +325,22 @@ def _logout(refresh_token: str, user_id: int, all_devices=False):
         if not user:
             raise ResourceNotFoundError("User session not found")
 
-        # TODO: Rather than deleting all sessions rows, consider invalidating the refresh token instead
         # This will help to obtain analytics on active devices
         if all_devices:
-            stmt = delete(Sessions).where(Sessions.user_id == user_id)
+            stmt = (
+                update(Sessions)
+                .where(Sessions.user_id == user_id)
+                .values(refresh_token=None)
+            )
             session.execute(stmt)
             session.commit()
 
         else:
-            stmt = delete(Sessions).filter_by(refresh_token=refresh_token)
+            stmt = (
+                update(Sessions)
+                .where(Sessions.refresh_token == refresh_token)
+                .values(refresh_token=None)
+            )
             session.execute(stmt)
             session.commit()
 
