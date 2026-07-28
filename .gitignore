@@ -8,7 +8,7 @@
 TODO
 
 tests
-frontend/**
+frontend
 
 # test files
 backend/public/posts
