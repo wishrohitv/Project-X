@@ -3,10 +3,12 @@
 **/__pycache__/
 **/.venv
 **/venv
+**/.ruff_cache
 
 TODO
 
 tests
+frontend/**
 
 # test files
 backend/public/posts
