@@ -429,7 +429,9 @@ def posts_replies(logged_user: LoggedUser | None = None, *args, **kwargs):
     session_user_id = logged_user.user_id if logged_user else None
     offset = request.args.get("offset", type=int, default=0)
     limit = request.args.get("limit", type=int, default=10)
-    return _get_post_replies(post_id=post_id, session_user_id=session_user_id, limit=limit, offset=offset)
+    return _get_post_replies(
+        post_id=post_id, session_user_id=session_user_id, limit=limit, offset=offset
+    )
 
 
 # /posts/<int:post_id>/report POST
