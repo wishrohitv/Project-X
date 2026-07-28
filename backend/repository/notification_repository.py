@@ -15,6 +15,7 @@ from utils import (
 
 Log = Logging(__name__)
 
+
 def _create_notification(
     user_id: int | None,
     notice: dict,
