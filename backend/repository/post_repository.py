@@ -43,7 +43,7 @@ from utils import (
     ResourceNotFoundError,
     SuccessResponse,
     UnAuthorizedError,
-    datetime_utc
+    datetime_utc,
 )
 
 from .feed_repository import _query_posts
@@ -530,9 +530,8 @@ def _get_post_replies(
         conditions = [
             Posts.parent_post_id == post_id,
             Posts.is_deleted == False,
-            Posts.visibility, # Fetch only public posts
-            Posts.is_reply, # `not Posts.is_reply` is not working as false
-
+            Posts.visibility,  # Fetch only public posts
+            Posts.is_reply,  # `not Posts.is_reply` is not working as false
         ]
 
         replies = _query_posts(
@@ -705,16 +704,16 @@ def _fetch_post_users(
                     Profile.media_public_id,
                     Profile.file_extension,
                     Profile.file_type,
-                    exists(
-                        select(Follower).where(
-                            Follower.user_id == Users.id,
-                            Follower.follower_id == session_user_id,
-                        )
-                    ).label("is_following")
+                    select(Follower).where(
+                        Follower.user_id == Users.id,
+                        Follower.follower_id == session_user_id,
+                    )
+                    .exists()
+                    .label("is_following")
                     if session_user_id
                     else literal(False).label("is_following"),
                 )
-                .join_from(Users, Profile, Users.id == Profile.id)
+                .join_from(Users, Profile, Users.id == Profile.user_id)
                 .join_from(Users, join_model, join_condition)
             )
             .where(*where_condition)
@@ -734,7 +733,6 @@ def _fetch_post_users(
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
                 else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
-                "media_public_id": user.media_public_id,
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,
                 "is_following": user.is_following,
