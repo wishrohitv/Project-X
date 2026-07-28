@@ -9,7 +9,6 @@ from modules import (
     json,
     request,
     select,
-    sessionmaker,
     url_for,
 )
 from utils import (
@@ -243,7 +242,6 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
                 "post_id": result[1].id,
                 "title": result[1].text,
                 "file_type": result[1].file_type,
-                "media_public_id": result[1].media_public_id,
                 "file_extension": result[1].file_extension,
                 "created_at": result[1].created_at.isoformat(),
                 "age_rating": result[

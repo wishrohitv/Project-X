@@ -1,4 +1,7 @@
 from modules import BACKGROUND_TASK_NUMBER_OF_THREADS, queue, threading
+from utils import Logging
+
+Log = Logging(__name__)
 
 task_queue = queue.Queue()
 
@@ -7,13 +10,16 @@ def worker():
     while True:
         try:
             task = task_queue.get(timeout=1)
+            Log.info(f"Executing task: {task}")
             task()  # Execute the task
+            Log.info(f"Task {task} completed")
             task_queue.task_done()
         except queue.Empty:
             continue
 
 
 def start_worker():
+    Log.info(f"Starting worker threads ({BACKGROUND_TASK_NUMBER_OF_THREADS})")
     # Start worker threads
     for _ in range(BACKGROUND_TASK_NUMBER_OF_THREADS):
         t = threading.Thread(target=worker, daemon=True)

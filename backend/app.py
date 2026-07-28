@@ -5,16 +5,24 @@ from modules import (
     Flask,
     jsonify,
     os,
+    request,
+    time,
     traceback,
 )
 from repository.init_db_setup import init_db_setup
-from services import initialize_socket
+from services.socket_service import NotificationServer
 from settings import Settings
 from tasks import start_worker
-from utils import AppError
+from utils import AppError, Logging, configure_logging
+from utils.extensions import socketio
+
+Log = Logging(__name__)
 
 
 def run_app():
+    # Configure logging
+    configure_logging()
+
     # Initialize database
     initialize_db()
 
@@ -29,8 +37,7 @@ def run_app():
 
     app.config["path"] = "public"
     app.config["MAX_CONTENT_LENGTH"] = SEREVR_ALLOWED_UPLOAD_FILE_SIZE
-    # Initialize socket
-    socket_io = initialize_socket(app)
+
     # Blueprint for auth
     from routes.v1.auth import auth_blueprint
 
@@ -76,6 +83,7 @@ def run_app():
                 error,
                 error.__traceback__,
             )
+            Log.error(f"Server error: {traceback.format_exc()}")
 
         # Log the error, return a custom JSON response or render a custom template
         return jsonify(
@@ -87,9 +95,15 @@ def run_app():
     # Start background worker
     start_worker()
 
-    return app, socket_io
+    # Initialize socket
+    socketio.init_app(
+        app,
+    )
+    socketio.on_namespace(NotificationServer("/notifications"))
+
+    return app
 
 
 if __name__ == "__main__":
-    app, socket_io = run_app()
-    socket_io.run(app, debug=Settings.DEBUG, host=Settings.HOST, port=Settings.PORT)
+    app = run_app()
+    socketio.run(app, debug=Settings.DEBUG, host=Settings.HOST, port=Settings.PORT)

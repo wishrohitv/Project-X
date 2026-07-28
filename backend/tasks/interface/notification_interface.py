@@ -2,7 +2,10 @@ from database import SessionLocal
 from models import Posts, Users
 from models.enums import NotificationType
 from repository.notification_repository import _create_notification
-from utils import Log, get_usernames
+from utils import Logging, get_usernames
+from utils.extensions import socketio
+
+Log = Logging(__name__)
 
 
 def mention(
@@ -58,8 +61,16 @@ def mention(
                     notice=notice,
                     type=NotificationType.mention,
                 )
+
+                # Emit the notification to the user via SocketIO
+                socketio.emit(
+                    "notification",
+                    {"type": NotificationType.mention.value, "notice": notice},
+                    to=user_id,
+                    namespace="/notifications",
+                )
+
     except Exception as e:
-        session.close()
         raise Exception(str(e))
     finally:
         session.close()
@@ -83,6 +94,14 @@ def suggestion(
             user_id=_user_id,
             notice=notice,
             type=NotificationType.suggestion,
+        )
+
+        # Emit the notification to the user via SocketIO
+        socketio.emit(
+            "notification",
+            {"type": NotificationType.suggestion.value, "notice": notice},
+            to=str(_user_id),
+            namespace="/notifications",
         )
 
 
@@ -121,6 +140,13 @@ def reply(
                     user_id=user_id,
                     notice=_notice,
                     type=type,
+                )
+                # Emit the notification to the user via SocketIO
+                socketio.emit(
+                    "notification",
+                    {"type": type.value, "notice": _notice},
+                    to=str(user_id),
+                    namespace="/notifications",
                 )
 
         # Extract mentioned usernames from the text
@@ -198,14 +224,20 @@ def follow(user_id: int, follower_user_id: int) -> None:
         user = session.query(Users).filter(Users.id == follower_user_id).first()
         if user is None:
             return
-        notic = {
+        notice = {
             "username": user.username,
             "alert": "New follower",
             "text": f"{user.username} started following you.",
         }
-        _create_notification(user_id, notic, NotificationType.follow)
+        _create_notification(user_id, notice, NotificationType.follow)
+        # Emit the notification to the user via SocketIO
+        socketio.emit(
+            "notification",
+            {"type": NotificationType.follow.value, "notice": notice},
+            to=str(user_id),
+            namespace="/notifications",
+        )
     except Exception as e:
-        Log.critical(str(e))
         raise Exception(str(e))
     finally:
         session.close()
@@ -236,8 +268,14 @@ def like(post_id: int, session_user_id: int) -> None:
             "post_id": post_id,
         }
         _create_notification(post.user_id, notic, NotificationType.like)
+        # Emit the notification to the user via SocketIO
+        socketio.emit(
+            "notification",
+            {"type": NotificationType.like.value, "notice": notic},
+            to=str(post.user_id),
+            namespace="/notifications",
+        )
     except Exception as e:
-        Log.critical(str(e))
         raise Exception(str(e))
     finally:
         session.close()
@@ -268,8 +306,14 @@ def repost(post_id: int, session_user_id: int) -> None:
             "post_id": post_id,
         }
         _create_notification(post.user_id, notic, NotificationType.like)
+        # Emit the notification to the user via SocketIO
+        socketio.emit(
+            "notification",
+            {"type": NotificationType.like.value, "notice": notic},
+            to=str(post.user_id),
+            namespace="/notifications",
+        )
     except Exception as e:
-        Log.critical(str(e))
         raise Exception(str(e))
     finally:
         session.close()

@@ -1,53 +1,58 @@
-from modules import LOGGING_PATH, logging, os
+from modules import (
+    LOGGING_PATH,
+    RotatingFileHandler,
+    current_app,
+    dictConfig,
+    logging,
+    os,
+    sys,
+)
 
-__all__ = ["Log", "Logging"]
-
-
-class Logging:
-    def __init__(self, name, filename="app.log", level=logging.INFO):
-
-        self.logger = logging.getLogger(name)
-        self.logger.setLevel(level)
-
-        if self.logger.hasHandlers():
-            self.logger.handlers.clear()
-
-        # self.logger.propagate = False
-
-        logDir = LOGGING_PATH
-        os.makedirs(logDir, exist_ok=True)
-
-        logFile = os.path.join(logDir, filename)
-
-        formatter = logging.Formatter(
-            "%(asctime)s | %(levelname)s | %(name)s | %(message)s"
-        )
-
-        fileHandler = logging.FileHandler(logFile)
-        fileHandler.setLevel(level)
-        fileHandler.setFormatter(formatter)
-
-        streamHandler = logging.StreamHandler()
-        streamHandler.setLevel(level)
-        streamHandler.setFormatter(formatter)
-
-        self.logger.addHandler(fileHandler)
-        self.logger.addHandler(streamHandler)
-
-    def info(self, message):
-        self.logger.info(message)
-
-    def error(self, message):
-        self.logger.error(message)
-
-    def debug(self, message):
-        self.logger.debug(message)
-
-    def critical(self, message):
-        self.logger.critical(message)
-
-    def warning(self, message):
-        self.logger.warning(message)
+__all__ = ["Logging", "configure_logging"]
 
 
-Log = Logging(__name__)
+def configure_logging():
+    # 1. Configure the logging system BEFORE creating the app instance
+    os.makedirs(LOGGING_PATH, exist_ok=True)
+
+    log_file = os.path.join(LOGGING_PATH, "app.log")
+    dictConfig(
+        {
+            "version": 1,
+            "disable_existing_loggers": False,
+            "formatters": {
+                "default": {
+                    "format": "[%(asctime)s] %(levelname)s in %(module)s: %(message)s",
+                }
+            },
+            "handlers": {
+                "console": {
+                    "class": "logging.StreamHandler",
+                    "stream": "ext://sys.stdout",
+                    "formatter": "default",
+                },
+                "file": {
+                    "class": "logging.handlers.RotatingFileHandler",
+                    "filename": log_file,
+                    "maxBytes": 1048576,  # 1 MB
+                    "backupCount": 5,
+                    "formatter": "default",
+                },
+            },
+            "root": {
+                "level": "INFO",
+                "handlers": ["console", "file"],
+            },
+        }
+    )
+
+
+class Logging(logging.LoggerAdapter):
+    def __init__(self, name, level=logging.INFO):
+        logger = logging.getLogger(name)
+        logger.setLevel(level)
+
+        # Enable propagation so messages flow upwards to root handlers (like files)
+        logger.propagate = True
+
+        super().__init__(logger, {})
