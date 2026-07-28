@@ -16,6 +16,9 @@ from repository.user_repository import (
     _block_user,
     _get_user_avatar,
     _get_user_profile,
+    _get_users_blocked_users,
+    _get_users_followers,
+    _get_users_followings,
     _remove_follower,
     _report_user,
     _unblock_user,
@@ -220,3 +223,69 @@ def report_user(logged_user: LoggedUser, *args, **kwargs):
 @rate_limiter_middleware(route.user_avatar, limit=14)
 def send_avatar_url(username: str):
     return _get_user_avatar(username)
+
+
+# /users/<int:user_id>/followers GET
+@users_blueprint.route(
+    route.user_followers.route_name, methods=route.user_followers.methods
+)
+@rate_limiter_middleware(route.user_followers)
+@verify_request_middleware(route.user_followers)
+def get_user_followers(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
+    user_id = kwargs["user_id"]
+    offset = request.args.get("offset", type=int, default=0)
+    limit = request.args.get("limit", type=int, default=10)
+
+    if limit == 0 or limit > 30:
+        raise BadRequestError("Invalid limit")
+    return _get_users_followers(
+        user_id,
+        session_user_id,
+        limit,
+        offset,
+    )
+
+
+# /users/<int:user_id>/following GET
+@users_blueprint.route(
+    route.user_followings.route_name, methods=route.user_followings.methods
+)
+@rate_limiter_middleware(route.user_followings)
+@verify_request_middleware(route.user_followings)
+def get_user_followings(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
+    user_id = kwargs["user_id"]
+    offset = request.args.get("offset", type=int, default=0)
+    limit = request.args.get("limit", type=int, default=10)
+
+    if limit == 0 or limit > 30:
+        raise BadRequestError("Invalid limit")
+    return _get_users_followings(
+        user_id,
+        session_user_id,
+        limit,
+        offset,
+    )
+
+
+# /users/<int:user_id>/blocked GET
+@users_blueprint.route(
+    route.user_blocked_users.route_name, methods=route.user_blocked_users.methods
+)
+@rate_limiter_middleware(route.user_blocked_users)
+@verify_request_middleware(route.user_blocked_users)
+def get_user_blocked_users(logged_user: LoggedUser, *args, **kwargs):
+    session_user_id = logged_user.user_id
+    user_id = kwargs["user_id"]
+    offset = request.args.get("offset", type=int, default=0)
+    limit = request.args.get("limit", type=int, default=10)
+
+    if limit == 0 or limit > 30:
+        raise BadRequestError("Invalid limit")
+    return _get_users_blocked_users(
+        user_id,
+        session_user_id,
+        limit,
+        offset,
+    )

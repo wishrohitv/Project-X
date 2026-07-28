@@ -119,6 +119,18 @@ class API_ENDPOINTS:
         role_permission=[ROLE.USER],
         methods=["DELETE"],
     )
+    user_followers = RouteAccess(
+        # Get followers list
+        route_name="/users/<int:user_id>/followers",
+        role_permission=[ROLE.USER],
+        methods=["GET"],
+    )
+    user_followings = RouteAccess(
+        # Get followings list
+        route_name="/users/<int:user_id>/followings",
+        role_permission=[ROLE.USER],
+        methods=["GET"],
+    )
     user_block = RouteAccess(
         # Block a user
         route_name="/users/<int:user_id>/block",
@@ -130,6 +142,12 @@ class API_ENDPOINTS:
         route_name="/users/<int:user_id>/block",
         role_permission=[ROLE.USER],
         methods=["DELETE"],
+    )
+    user_blocked_users = RouteAccess(
+        # Get blocked users
+        route_name="/users/<int:user_id>/blocked",
+        role_permission=[ROLE.USER],
+        methods=["GET"],
     )
     user_report_users = RouteAccess(
         # Report a user

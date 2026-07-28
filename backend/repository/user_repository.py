@@ -23,14 +23,12 @@ from modules import (
     func,
     functools,
     json,
-    jsonify,
-    make_response,
+    literal,
     or_,
     os,
     redirect,
     request,
     select,
-    sessionmaker,
     update,
     url_for,
 )
@@ -356,14 +354,14 @@ def _block_user(session_user_id: int, user_id: int):
         # Check has user already blocked or not
         stmt = select(
             exists().where(
-                BlockedUsers.blocked_by == session_user_id,
-                BlockedUsers.user_id == user_id,
+                BlockedUsers.blocked_to == user_id,
+                BlockedUsers.user_id == session_user_id,
             )
         )
         user = session.scalar(stmt)
 
         if not user:
-            blocked_user = BlockedUsers(user_id=user_id, blocked_by=session_user_id)
+            blocked_user = BlockedUsers(user_id=session_user_id, blocked_to=user_id)
             session.add(blocked_user)
             session.commit()
 
@@ -389,8 +387,8 @@ def _unblock_user(session_user_id: int, user_id: int):
         # Check has user already blocked or not
         stmt = select(
             exists().where(
-                BlockedUsers.blocked_by == session_user_id,
-                BlockedUsers.user_id == user_id,
+                BlockedUsers.blocked_to == user_id,
+                BlockedUsers.user_id == session_user_id,
             )
         )
         user = session.scalar(stmt)
@@ -398,8 +396,8 @@ def _unblock_user(session_user_id: int, user_id: int):
         # Remove the user from the table
         if user:
             stmt = delete(BlockedUsers).where(
-                BlockedUsers.blocked_by == session_user_id,
-                BlockedUsers.user_id == user_id,
+                BlockedUsers.blocked_to == user_id,
+                BlockedUsers.user_id == session_user_id,
             )
             session.execute(stmt)
             session.commit()
@@ -471,5 +469,143 @@ def _get_user_avatar(username: str):
         raise
     except Exception as e:
         raise InternalServerError("Error while fetching user avatar") from e
+    finally:
+        session.close()
+
+
+def _get_users_followers(
+    user_id: int,
+    session_user_id: int,
+    limit: int = 15,
+    offset: int = 0,
+):
+    join_model = Follower
+    join_condition = Users.id == Follower.follower_id
+    where_condition = [Follower.user_id == user_id]
+
+    users = _fetch_users_follwer_and_blocked_user(
+        join_model=join_model,
+        join_condition=join_condition,
+        where_condition=where_condition,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+    )
+    return users
+
+
+def _get_users_followings(
+    user_id: int,
+    session_user_id: int,
+    limit: int = 15,
+    offset: int = 0,
+):
+    join_model = Follower
+    join_condition = Follower.user_id == Users.id
+    where_condition = [Follower.follower_id == user_id]
+
+    users = _fetch_users_follwer_and_blocked_user(
+        join_model=join_model,
+        join_condition=join_condition,
+        where_condition=where_condition,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+    )
+    return users
+
+
+def _get_users_blocked_users(
+    user_id: int,
+    session_user_id: int,
+    limit: int = 15,
+    offset: int = 0,
+):
+    join_model = BlockedUsers
+    join_condition = BlockedUsers.blocked_to == Users.id
+    where_condition = [BlockedUsers.user_id == user_id]
+
+    users = _fetch_users_follwer_and_blocked_user(
+        join_model=join_model,
+        join_condition=join_condition,
+        where_condition=where_condition,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+    )
+    return users
+
+
+def _fetch_users_follwer_and_blocked_user(
+    join_model,
+    join_condition,
+    where_condition,
+    session_user_id: int | None,
+    limit: int = 15,
+    offset: int = 0,
+):
+    session = SessionLocal()
+
+    try:
+        redis_key = f"post-detail:{request.path}:{request.remote_addr}"
+
+        cached_data = redis_client.get(redis_key)
+        if cached_data:
+            fetched_users = json.loads(cached_data)
+            Log.info("Redis hit post's interected users")
+            return SuccessResponse(
+                data=fetched_users, message="Fetched data", status_code=200
+            )
+        FollowerAlias = aliased(Follower)
+        stmt = (
+            (
+                select(
+                    Users.id,
+                    Users.username,
+                    Users.name,
+                    Profile.media_url,
+                    Profile.media_public_id,
+                    Profile.file_extension,
+                    Profile.file_type,
+                    select(1)
+                    .where(
+                        FollowerAlias.user_id == Users.id,
+                        FollowerAlias.follower_id == session_user_id,
+                    )
+                    .exists()
+                    .label("is_following")
+                    if session_user_id
+                    else literal(False).label("is_following"),
+                )
+                .outerjoin_from(Users, Profile, Users.id == Profile.user_id)
+                .join_from(Users, join_model, join_condition)
+            )
+            .where(*where_condition)
+            .limit(limit)
+            .offset(offset)
+        )
+
+        result = session.execute(stmt).all()
+
+        Log.info("DB miss post's interected users")
+        fetched_users = [
+            {
+                "user_id": user.id,
+                "username": user.username,
+                "name": user.name,
+                "profile_img_url": user.media_url
+                if USE_CLOUDINARY_STORAGE
+                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
+                "file_extension": user.file_extension,
+                "file_type": user.file_type,
+                "is_following": user.is_following,
+            }
+            for user in result
+        ]
+        redis_client.set(redis_key, json.dumps(fetched_users), ex=110)
+        return SuccessResponse(
+            data=fetched_users, message="Fetched data", status_code=200
+        )
+
     finally:
         session.close()
