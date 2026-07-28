@@ -3,12 +3,11 @@
 Project X is a social media platform for sharing and discovering posts. Users can create profiles, upload their own posts, follow other users, and engage with the community through likes, comments, and reposts and can create collections of posts.
 
 
-### Frontend Status
+### Server hosted on a VPS
 -- Work in Progress
-  Visit the [memer.in](https://memer.in) to see, use the project in action.
+  Visit the [vps.memer.in](https://vps.memer.in) to see, use the project in action.
 
 A project for social media for sharing posts
-contains frontend and backend
 
 ## Features
 
@@ -63,4 +62,8 @@ contains frontend and backend
 
 
 ## Installation
- Go to [Docs](./docs/setup.md) folder and follow the instructions in the setup.md file to set up the project locally.
+Go to [Docs](./docs/setup.md) folder and follow the instructions in the setup.md file to set up the project locally.
+
+## Backend
+
+For full backend details, examples, and API reference see `backend/README.md`.
