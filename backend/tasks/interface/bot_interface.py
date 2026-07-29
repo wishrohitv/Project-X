@@ -60,7 +60,7 @@ def process_user_requests(
             replying_to = sorted(set(replying_to + [current_post[1]]))
 
         _create_post(
-            user_id=32,  # Default user_id for bot, representing the bot itself
+            user_id=1,  # Default user_id for bot, representing the bot itself
             text=result,
             tags=None,
             media_url=None,
