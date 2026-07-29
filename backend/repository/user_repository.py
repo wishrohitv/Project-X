@@ -5,6 +5,7 @@ from models import (
     Follower,
     Profile,
     ReportedUsers,
+    Role,
     Sessions,
     Users,
 )
@@ -194,32 +195,35 @@ def _get_user_profile(
                 Profile.file_extension,
                 func.count(follower_count.user_id).label("follower_count"),
                 func.count(following_count.follower_id).label("following_count"),
-                exists(
-                    select(1).where(
-                        Follower.follower_id == session_user_id,
-                        Follower.user_id == Users.id,
-                    )
-                ).label(
+                select(1).where(
+                    Follower.follower_id == session_user_id,
+                    Follower.user_id == Users.id,
+
+                )
+                .exists()
+                .label(
                     "is_following"  # Whether session user follows or not
                 ),
+                Role.role
             )
             .select_from(Users)
             .filter_by(**match_by)  # Apply matches to User only while in context
+            .outerjoin(Role, Role.id == Users.role)
             .outerjoin(follower_count, follower_count.user_id == Users.id)
             .outerjoin(following_count, following_count.follower_id == Users.id)
             .outerjoin(Profile, Profile.user_id == Users.id)
-            .group_by(Users.id, Profile.id)
+            .group_by(Users.id, Profile.id, Role.id)
         )
         user = session.execute(stmt).first()
 
         if user:
-            usersDict = {
+            users_dict = {
                 "user_id": user[0].id,
                 "name": user[0].name,
                 "username": user[0].username,
                 "email": user[0].email if session_user_id == user[0].id else "",
                 "join_date": user[0].created_at.strftime("%Y-%m-%d %H:%M:%S"),
-                "role": user[0].role,
+                "role": user.role,
                 "account_status": user[0].account_status.value,
                 "bio": user[1],
                 "country": user[2],
@@ -230,10 +234,10 @@ def _get_user_profile(
                 "following_count": user[7],
                 "is_following": user[8],
             }
-            redis_client.set(redis_key, json.dumps(usersDict), ex=100)
+            redis_client.set(redis_key, json.dumps(users_dict), ex=100)
             Log.info(f"Cache miss for user: {redis_key}")
             return SuccessResponse(
-                data=usersDict, message="Fetched user detail successfully"
+                data=users_dict, message="Fetched user detail successfully"
             )
         else:
             raise ResourceNotFoundError("User does not exist")
