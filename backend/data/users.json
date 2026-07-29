@@ -1,0 +1,18 @@
+{
+  "user1": {
+    "name": "Nara",
+    "username": "Nara",
+    "email": "nara@memer.in",
+    "password": "",
+    "role": 5,
+    "is_verified": true
+  },
+  "user2": {
+    "name": "Gen Alpha",
+    "username": "genAlpha",
+    "email": "genAlpha@memer.in",
+    "password": "",
+    "role": 4,
+    "is_verified": false
+  }
+}
