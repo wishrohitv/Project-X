@@ -16,6 +16,7 @@ A project for social media for sharing posts
 - **JWT Authentication:** Secure session and auth flows using JWT tokens for access and refresh.
 - **Role-Based Access Control:** Strong RBAC system governing endpoint permissions and user roles.
 - **Redis & Caching:** Redis is used for caching, pub/sub, and realtime session/notifications support.
+- **Background Workers & Queues:** Python’s built-in queue mechanism is used to process asynchronous tasks such as notifications, emails, and other background jobs.
 - **Rate Limiting:** Request throttling is enforced across key API endpoints.
 
 
