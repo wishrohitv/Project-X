@@ -195,16 +195,16 @@ def _get_user_profile(
                 Profile.file_extension,
                 func.count(follower_count.user_id).label("follower_count"),
                 func.count(following_count.follower_id).label("following_count"),
-                select(1).where(
+                select(1)
+                .where(
                     Follower.follower_id == session_user_id,
                     Follower.user_id == Users.id,
-
                 )
                 .exists()
                 .label(
                     "is_following"  # Whether session user follows or not
                 ),
-                Role.role
+                Role.role,
             )
             .select_from(Users)
             .filter_by(**match_by)  # Apply matches to User only while in context

@@ -23,7 +23,9 @@ class NotificationServer(Namespace):
         decoded_token = None
 
         try:
-            decoded_token = decode_jwt_token(access_token, Settings.JWT_ACCESS_TOKEN_HASH_KEY)
+            decoded_token = decode_jwt_token(
+                access_token, Settings.JWT_ACCESS_TOKEN_HASH_KEY
+            )
         except jwt.ExpiredSignatureError:
             Log.warning("User token expired")
             return False

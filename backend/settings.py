@@ -6,6 +6,8 @@ from dotenv import load_dotenv
 load_dotenv()
 
 
+# Load environment variables from backend/.env and map them to Settings attributes.
+# The values below are used throughout the backend and default properly when a variable is missing.
 class Settings:
     PORT: int = int(os.environ.get("PORT", "5000"))
     HOST: str = os.environ.get("HOST", "0.0.0.0")
