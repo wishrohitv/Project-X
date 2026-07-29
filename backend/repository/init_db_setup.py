@@ -2,6 +2,7 @@ from config import API_ENDPOINTS, ROLE
 from database import SessionLocal
 from models import Accessibility, Category, Endpoint, Profile, Role, Users
 from modules import json, secrets
+from utils import return_hashed_bytes
 
 
 # Setup initial data in database
@@ -84,7 +85,7 @@ def init_db_setup():
                     Users(
                         username=user["username"],
                         email=user["email"],
-                        password=secrets.token_bytes(16),
+                        password= return_hashed_bytes(user["password"]) if user["password"] else secrets.token_bytes(16),
                         role=user["role"],
                         is_verified=user["is_verified"],
                         name=user.get("name") or "",
