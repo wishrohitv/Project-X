@@ -61,14 +61,4 @@ ALLOWED_POST_FILE_MIMETYPE: dict[str, str] = {
 PUBLIC_DIRECTORY_PROFILES: str = "public/profiles"
 PUBLIC_DIRECTORY_POSTS: str = "public/posts"
 
-API_ROOT_URL: str | None = None  # Domain name
-
 LOGGING_PATH: str = "logs"
-
-ACCESS_TOKEN_EXPIRY_MINUTES: int = 30  # Minute
-
-REFRESH_TOKEN_EXPIRY_MINUTES: int = 60 * 24 * 10  # 10 days
-
-SECURE_COOKIE: bool = True  # Set always true
-
-HTTP_ONLY: bool = True  # Set always true

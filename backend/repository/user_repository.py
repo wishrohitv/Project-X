@@ -9,12 +9,7 @@ from models import (
     Users,
 )
 from modules import (
-    ACCESS_TOKEN_EXPIRY_MINUTES,
-    API_ROOT_URL,
-    HTTP_ONLY,
     PUBLIC_DIRECTORY_PROFILES,
-    REFRESH_TOKEN_EXPIRY_MINUTES,
-    SECURE_COOKIE,
     USE_CLOUDINARY_STORAGE,
     USE_EMAIL_SERVICE,
     aliased,
@@ -33,6 +28,7 @@ from modules import (
     url_for,
 )
 from services.cloudinary_service import delete_media
+from settings import Settings
 from tasks import add_task_in_queue
 from tasks.interface import follow
 from utils import (
@@ -43,6 +39,7 @@ from utils import (
     Logging,
     ResourceNotFoundError,
     SuccessResponse,
+    fname,
 )
 
 Log = Logging(__name__)
@@ -228,7 +225,7 @@ def _get_user_profile(
                 "country": user[2],
                 "profile_img_url": user[3]
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user[4]}.{user[5]}')}",
+                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(user[4], user[5]))}",
                 "follower_count": user[6],
                 "following_count": user[7],
                 "is_following": user[8],
@@ -456,14 +453,12 @@ def _get_user_avatar(username: str):
             .first()
         )
         if not user:
-            return redirect(
-                url_for("return_assets.serve_image", filename=f"{None}.{None}")
-            )
+            return redirect(url_for("return_assets.serve_image", filename="default"))
 
         return redirect(
             user[1]
             if USE_CLOUDINARY_STORAGE
-            else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[2]}.{user[3]}')}"
+            else f"{Settings.API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=fname(user[2], user[3]))}"
         )
     except AppError:
         raise
@@ -595,7 +590,7 @@ def _fetch_users_follwer_and_blocked_user(
                 "name": user.name,
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
+                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(user.media_public_id, user.file_extension))}",
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,
                 "is_following": user.is_following,

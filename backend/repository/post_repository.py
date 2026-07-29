@@ -10,8 +10,8 @@ from models import (
     Reposts,
     Users,
 )
+from settings import Settings
 from modules import (
-    API_ROOT_URL,
     PUBLIC_DIRECTORY_POSTS,
     USE_CLOUDINARY_STORAGE,
     aliased,
@@ -44,6 +44,7 @@ from utils import (
     SuccessResponse,
     UnAuthorizedError,
     datetime_utc,
+    fname,
 )
 
 from .feed_repository import _query_posts
@@ -411,8 +412,6 @@ def _user_posts(
 
 def _get_post_media(
     post_id: int,
-    offset: int = 0,
-    limit: int = 10,
 ) -> tuple[str, str, str, str] | None:
     session = SessionLocal()
     try:
@@ -704,7 +703,8 @@ def _fetch_post_users(
                     Profile.media_public_id,
                     Profile.file_extension,
                     Profile.file_type,
-                    select(Follower).where(
+                    select(Follower)
+                    .where(
                         Follower.user_id == Users.id,
                         Follower.follower_id == session_user_id,
                     )
@@ -732,7 +732,7 @@ def _fetch_post_users(
                 "name": user.name,
                 "profile_img_url": user.media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{user.media_public_id}.{user.file_extension}')}",
+                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(user.media_public_id, user.file_extension))}",
                 "file_extension": user.file_extension,
                 "file_type": user.file_type,
                 "is_following": user.is_following,

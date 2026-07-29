@@ -2,10 +2,6 @@ from config import API_ENDPOINTS, ROLE
 from middlewares import rate_limiter_middleware, verify_request_middleware
 from models import AccountStatus
 from modules import (
-    ACCESS_TOKEN_EXPIRY_MINUTES,
-    HTTP_ONLY,
-    REFRESH_TOKEN_EXPIRY_MINUTES,
-    SECURE_COOKIE,
     Blueprint,
     json,
     make_response,
@@ -40,12 +36,12 @@ route = API_ENDPOINTS()
 @rate_limiter_middleware(route.auth_signup, exponential=True)
 def signup():
     body: dict = request.get_json()
-    name = body.get("name")
-    username = body.get("username")
-    email = body.get("email")
-    password1 = body.get("password_1")
-    password2 = body.get("password_2")
-    country = body.get("country") if None else "world"
+    name: str | None = body.get("name")
+    username: str | None = body.get("username")
+    email: str | None = body.get("email")
+    password1: str | None = body.get("password_1")
+    password2: str | None = body.get("password_2")
+    country: str | None = body.get("country") if None else "world"
 
     if not all([username, email, password1, password2]):
         raise BadRequestError("username, email and password are required")

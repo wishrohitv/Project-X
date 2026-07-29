@@ -1,4 +1,5 @@
 from modules import Namespace, emit, join_room, jwt, request, rooms
+from settings import Settings
 from utils import Logging, decode_jwt_token
 from utils.extensions import socketio
 
@@ -22,14 +23,13 @@ class NotificationServer(Namespace):
         decoded_token = None
 
         try:
-            decoded_token = decode_jwt_token(access_token)
+            decoded_token = decode_jwt_token(access_token, Settings.JWT_ACCESS_TOKEN_HASH_KEY)
         except jwt.ExpiredSignatureError:
             Log.warning("User token expired")
             return False
         except Exception as _:
             Log.warning("Invalid token structure")
             return False
-
 
         if decoded_token:
             user_id = decoded_token["payload"]["id"]

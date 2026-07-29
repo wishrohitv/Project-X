@@ -1,7 +1,6 @@
 from database import SessionLocal
 from models import Follower, Posts, Profile, Users
 from modules import (
-    API_ROOT_URL,
     TSVECTOR,
     USE_CLOUDINARY_STORAGE,
     and_,
@@ -13,7 +12,8 @@ from modules import (
     text,
     url_for,
 )
-from utils import BadRequestError, InternalServerError, SuccessResponse
+from settings import Settings
+from utils import BadRequestError, InternalServerError, SuccessResponse, fname
 
 from .feed_repository import _query_posts
 
@@ -53,7 +53,7 @@ def _search_by_users(
                 "name": user[1],
                 "profile_img_url": [2]
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[3]}.{user[4]}')}",
+                else f"{Settings.API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=fname(user[3], user[4]))}",
                 "is_following": user[5],
             }
             for user in result
@@ -109,7 +109,7 @@ def _search_prediction(text: str):
                 "name": user[1],
                 "profile_img_url": [2]
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=f'{user[3]}.{user[4]}')}",
+                else f"{Settings.API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=fname(user[3], user[4]))}",
             }
             for user in result
         ]

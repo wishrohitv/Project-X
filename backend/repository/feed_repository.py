@@ -1,7 +1,6 @@
 from database import SessionLocal, redis_client
 from models import Bookmark, Category, Likes, Posts, Profile, Reposts, Users
 from modules import (
-    API_ROOT_URL,
     USE_CLOUDINARY_STORAGE,
     aliased,
     exists,
@@ -11,12 +10,14 @@ from modules import (
     select,
     url_for,
 )
+from settings import Settings
 from utils import (
     AppError,
     BadRequestError,
     InternalServerError,
     Logging,
     SuccessResponse,
+    fname,
 )
 
 Log = Logging(__name__)
@@ -147,7 +148,7 @@ def _query_posts(
                 "user": {
                     "profile_img_url": feed[2]
                     if USE_CLOUDINARY_STORAGE
-                    else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{feed[3]}.{feed[4]}')}",
+                    else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(feed[3], feed[4]))}",
                     "username": feed[0],
                     "user_id": feed[1].user_id,
                 },
@@ -172,7 +173,7 @@ def _query_posts(
                     "is_template": feed[1].is_template,
                     "post_media_url": feed[1].media_url
                     if USE_CLOUDINARY_STORAGE
-                    else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=f'{feed[1].media_public_id}.{feed[1].file_extension}')}",
+                    else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=fname(feed[1].media_public_id, feed[1].file_extension, post=True))}",
                     "like_count": feed[5],
                     "repost_count": feed[6],
                     "bookmark_count": feed[7],
@@ -236,7 +237,7 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
                 "user_id": result[1].user_id,
                 "profile_img_url": result[2]
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=f'{result[3]}.{result[4]}')}",
+                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(result[3], result[4]))}",
             },
             "post": {
                 "post_id": result[1].id,
@@ -249,7 +250,7 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
                 ].age_rating.value,  # Return Enum class from db and get its value from
                 "post_media_url": result[1].media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=f'{result[1].media_public_id}.{result[1].file_extension}')}",
+                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=fname(result[1].media_public_id, result[1].file_extension, post=True))}",
             },
         }
         return {"status": 200, "data": post}

@@ -6,12 +6,7 @@ from models import (
     Users,
 )
 from modules import (
-    ACCESS_TOKEN_EXPIRY_MINUTES,
-    API_ROOT_URL,
-    HTTP_ONLY,
     PUBLIC_DIRECTORY_PROFILES,
-    REFRESH_TOKEN_EXPIRY_MINUTES,
-    SECURE_COOKIE,
     USE_CLOUDINARY_STORAGE,
     USE_EMAIL_SERVICE,
     aliased,
@@ -27,6 +22,7 @@ from modules import (
 )
 from services.cloudinary_service import delete_media
 from services.mail_service import send_otp
+from settings import Settings
 from utils import (
     AccessRefreshTokens,
     AppError,
@@ -68,10 +64,10 @@ def _generate_access_and_refresh_token(user: Users, message: str) -> SuccessResp
     }
 
     access_token = generate_jwt_token(
-        user_data=access_obj, expire_in_minute=ACCESS_TOKEN_EXPIRY_MINUTES
+        user_data=access_obj, hash_key=Settings.JWT_ACCESS_TOKEN_HASH_KEY, expire_in_minute=Settings.ACCESS_TOKEN_EXPIRY_MINUTES
     )
     refresh_token = generate_jwt_token(
-        user_data=refresh_obj, expire_in_minute=REFRESH_TOKEN_EXPIRY_MINUTES
+        user_data=refresh_obj, hash_key=Settings.JWT_REFRESH_TOKEN_HASH_KEY, expire_in_minute=Settings.REFRESH_TOKEN_EXPIRY_MINUTES
     )
     try:
         stmt = Sessions(user_id=user.id, refresh_token=refresh_token)
@@ -97,20 +93,20 @@ def _generate_access_and_refresh_token(user: Users, message: str) -> SuccessResp
         res.set_cookie(
             key="access-token",
             value=access_token,
-            httponly=HTTP_ONLY,
-            secure=SECURE_COOKIE,
+            httponly=Settings.HTTP_ONLY,
+            secure=Settings.SECURE_COOKIE,
             path="/",
             samesite="None",
-            max_age=ACCESS_TOKEN_EXPIRY_MINUTES * 60,
+            max_age=Settings.ACCESS_TOKEN_EXPIRY_MINUTES * 60,
         )
         res.set_cookie(
             key="refresh-token",
             value=refresh_token,
-            httponly=HTTP_ONLY,
-            secure=SECURE_COOKIE,
+            httponly=Settings.HTTP_ONLY,
+            secure=Settings.SECURE_COOKIE,
             path="/",
             samesite="None",
-            max_age=REFRESH_TOKEN_EXPIRY_MINUTES * 60,
+            max_age=Settings.REFRESH_TOKEN_EXPIRY_MINUTES * 60,
         )
     return res
 
@@ -270,7 +266,7 @@ def _login_user(username, email, password):
 def _refresh_tokens(refresh_token: str):
     session = SessionLocal()
     try:
-        decoded_data = decode_jwt_token(refresh_token)
+        decoded_data = decode_jwt_token(refresh_token, Settings.JWT_REFRESH_TOKEN_HASH_KEY)
         if not decoded_data:
             raise TokenExpiredError("Token expired, Please login again")
         user_id = decoded_data["payload"]["id"]
