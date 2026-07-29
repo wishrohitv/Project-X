@@ -3,7 +3,7 @@
     "name": "Nara",
     "username": "Nara",
     "email": "nara@memer.in",
-    "password": "",
+    "password": null,
     "role": 5,
     "is_verified": true
   },
@@ -11,7 +11,7 @@
     "name": "Gen Alpha",
     "username": "genAlpha",
     "email": "genAlpha@memer.in",
-    "password": "",
+    "password": null,
     "role": 4,
     "is_verified": false
   }
