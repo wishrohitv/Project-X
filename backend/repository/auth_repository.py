@@ -64,10 +64,14 @@ def _generate_access_and_refresh_token(user: Users, message: str) -> SuccessResp
     }
 
     access_token = generate_jwt_token(
-        user_data=access_obj, hash_key=Settings.JWT_ACCESS_TOKEN_HASH_KEY, expire_in_minute=Settings.ACCESS_TOKEN_EXPIRY_MINUTES
+        user_data=access_obj,
+        hash_key=Settings.JWT_ACCESS_TOKEN_HASH_KEY,
+        expire_in_minute=Settings.ACCESS_TOKEN_EXPIRY_MINUTES,
     )
     refresh_token = generate_jwt_token(
-        user_data=refresh_obj, hash_key=Settings.JWT_REFRESH_TOKEN_HASH_KEY, expire_in_minute=Settings.REFRESH_TOKEN_EXPIRY_MINUTES
+        user_data=refresh_obj,
+        hash_key=Settings.JWT_REFRESH_TOKEN_HASH_KEY,
+        expire_in_minute=Settings.REFRESH_TOKEN_EXPIRY_MINUTES,
     )
     try:
         stmt = Sessions(user_id=user.id, refresh_token=refresh_token)
@@ -171,15 +175,22 @@ def _generate_otp_for_user(user_id: int):
     session = SessionLocal()
     # TODO: check email bounce
 
-    key = f"rate_limit:{user_id}"
+    redis_key = f"rate_limit_otp:{user_id}"
+    total_otp_generated_key = f"rate_limit_otp:{request.remote_addr}"
 
-    count = redis_client.incr(key)
+    total_otp_generated_count = redis_client.incr(total_otp_generated_key)
+    if total_otp_generated_count > 6:
+        if redis_client.ttl(total_otp_generated_key) < 0:
+            redis_client.expire(total_otp_generated_key, 60 * 60 * 24)
+        raise RateLimitExceededError("Rate limit exceeded. Try again after 24 hour")
+
+    count = redis_client.incr(redis_key)
 
     if count == 1:
-        redis_client.expire(key, 30)
+        redis_client.expire(redis_key, 30)
 
     if count > 3:
-        ttl = redis_client.ttl(key)
+        ttl = redis_client.ttl(redis_key)
         raise RateLimitExceededError(
             f"Rate limit exceeded. Try again after {ttl} seconds."
         )
@@ -266,7 +277,9 @@ def _login_user(username, email, password):
 def _refresh_tokens(refresh_token: str):
     session = SessionLocal()
     try:
-        decoded_data = decode_jwt_token(refresh_token, Settings.JWT_REFRESH_TOKEN_HASH_KEY)
+        decoded_data = decode_jwt_token(
+            refresh_token, Settings.JWT_REFRESH_TOKEN_HASH_KEY
+        )
         if not decoded_data:
             raise TokenExpiredError("Token expired, Please login again")
         user_id = decoded_data["payload"]["id"]
