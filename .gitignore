@@ -13,7 +13,6 @@ frontend
 # test files
 backend/public/posts
 backend/public/profiles
-backend/data
 
 # Migration file
 **/alembic.ini
