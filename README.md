@@ -4,10 +4,20 @@ Project X is a social media platform for sharing and discovering posts. Users ca
 
 
 ### Server hosted on a VPS
--- Work in Progress
-  Visit the [vps.memer.in](https://vps.memer.in) to see, use the project in action.
+
+  Visit the [vps.memer.in](https://vps.memer.in/api/v1/feed) to see, use the project in action.
 
 A project for social media for sharing posts
+
+## Core Highlights
+
+- **AI Agent:** `NARA` is an AI assistant/bot integrated into the app, similar to Grok.
+- **WebSockets Notifications:** Real-time notification delivery powered by Flask-SocketIO.
+- **JWT Authentication:** Secure session and auth flows using JWT tokens for access and refresh.
+- **Role-Based Access Control:** Strong RBAC system governing endpoint permissions and user roles.
+- **Redis & Caching:** Redis is used for caching, pub/sub, and realtime session/notifications support.
+- **Rate Limiting:** Request throttling is enforced across key API endpoints.
+
 
 ## Features
 
@@ -31,9 +41,10 @@ A project for social media for sharing posts
 - Collections (User can create, edit, delete and share collections of memes like Youtube playlist)
 - Search Functionality
 - Notifications (Real-time notifications for likes, comments, and new posts) using WebSockets
-- **NARA** (AI chat bot similar to Grok bot) underlying AI Agent
+- **NARA** (AI agent bot similar to Grok bot)
 - Analytics (Planned - not implemented yet)
 - Chat (Planned - not implemented yet)
+
 
 ## Tech Stack
 - Frontend: Html, Tailwind CSS, Vanilla JS
@@ -62,8 +73,8 @@ A project for social media for sharing posts
 
 
 ## Installation
-Go to [Docs](./docs/setup.md) folder and follow the instructions in the setup.md file to set up the project locally.
+See `docs/setup.md` for installation steps, `.env` setup, and backend configuration mapping.
 
 ## Backend
 
-For full backend details, examples, and API reference see `backend/README.md`.
+For full backend details, architecture overview, endpoint descriptions, and deployment notes, see [backend/README.md](backend/README.md).

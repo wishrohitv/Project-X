@@ -1,7 +1,7 @@
 
-# Memestore — Backend
+# Project-X — Backend
 
-This directory contains the backend for Project Memestore — a lightweight social-sharing service for posts and meme templates. The backend is built with Flask, SQLAlchemy and provides REST APIs, background tasks, and real-time notifications.
+This directory contains the backend for Project Project-X — a lightweight social-sharing service for posts and meme templates. The backend is built with Flask, SQLAlchemy and provides REST APIs, background tasks, and real-time notifications.
 
 ## Quick Overview
 
@@ -43,77 +43,33 @@ Top-level files you will use frequently:
 - [services](services) — external integrations and business logic
 - [models](models) — SQLAlchemy models
 
-## Quickstart (Development)
+## Backend folder structure
 
-1. Create and activate a Python virtualenv:
-
-```bash
-python3 -m venv .venv
-source .venv/bin/activate
-```
-
-2. Install dependencies:
-
-```bash
-pip install -r requirements.txt
-```
-
-3. Create a `.env` file in this `backend/` directory. Minimum required vars:
-
-```env
-PORT=5000
-HOST=0.0.0.0
-DEBUG=True
-APP_SECRET_KEY=replace_me
-DB_URL=postgresql://user:pass@localhost:5432/memestore
-JWT_HASH_KEY=replace_me
-REDIS_URL=redis://localhost:6379/0
-CLOUDINARY_URL=cloudinary://<key>:<secret>@<cloud_name>
-RESEND_API_KEY=replace_me
-GEMINI_API_KEY=replace_me
-GEMINI_MODEL_NAME=replace_me
-ORIGINS=http://localhost:3000
-```
-
-4. Initialize the database (creates tables defined by models):
-
-```bash
-python -c "from database import initialize_db; initialize_db()"
-```
-
-5. Run pending migrations (if any):
-
-```bash
-alembic upgrade head
-```
-
-6. Start the dev server:
-
-```bash
-python app.py
-```
-
-The app will start on the port configured in `.env` (default `5000`).
+- `backend/`
+  - `.env` — environment file for runtime configuration
+  - `alembic.ini` — Alembic configuration
+  - `app.py` — app creation and startup logic
+  - `wsgi.py` — WSGI entrypoint for production servers
+  - `database.py` — database initialization
+  - `config/` — permission and role configuration
+  - `routes/` — request routing and endpoint handlers
+  - `models/` — SQLAlchemy model definitions
+  - `repository/` — database access layer
+  - `services/` — external integrations and business logic
+  - `tasks/` — background worker and task interfaces
+  - `utils/` — helpers, error handling, logging, extensions
+  - `public/` — static media assets
+  - `logs/` — runtime logs
 
 ## Running in Production
 
-Use a WSGI server (Gunicorn) with an appropriate worker class for WebSocket support:
+Use a WSGI server (Gunicorn) with a gevent worker for WebSocket support:
 
 ```bash
-gunicorn -w 4 -b 0.0.0.0:5000 app:run_app() --worker-class geventwebsocket.gunicorn.workers.GeventWebSocketWorker
+gunicorn -w 4 -b 0.0.0.0:5000 -k gevent wsgi:app 
 ```
 
 Adjust worker count and resource limits for your deployment.
-
-## Database & Migrations
-
-- Models live under the [models](models) package.
-- Use Alembic to generate and apply migrations:
-
-```bash
-alembic revision --autogenerate -m "Describe change"
-alembic upgrade head
-```
 
 If you need to recreate the DB schema during development, use `initialize_db()` in `database.py`.
 
@@ -121,15 +77,87 @@ If you need to recreate the DB schema during development, use `initialize_db()` 
 
 All endpoints are prefixed with `/api/v1`.
 
-- `POST /api/v1/auth/register` — register a user
-- `POST /api/v1/auth/login` — login and receive access token
-- `GET /api/v1/posts` — list posts
-- `POST /api/v1/posts` — create a post
-- `GET /api/v1/users/:id` — get user profile
-- `GET /api/v1/feed` — user feed
-- `GET /api/v1/search` — search posts/users
+### Auth
+- `POST /api/v1/auth/signup`
+- `POST /api/v1/auth/login`
+- `POST /api/v1/auth/logout`
+- `POST /api/v1/auth/refresh`
+- `POST /api/v1/auth/otp/generate`
+- `POST /api/v1/auth/otp/verify`
+- `GET /api/v1/auth/c/user`
 
-Refer to the route handlers under [routes/v1](routes/v1) for the exact request/response formats and query parameters.
+### Users
+- `GET /api/v1/users/<string:username>`
+- `DELETE /api/v1/users`
+- `PUT /api/v1/users`
+- `PUT /api/v1/users/profile_img`
+- `POST /api/v1/users/profile/image`
+- `GET /api/v1/users/profile/image`
+- `PUT /api/v1/users/profile/image`
+- `DELETE /api/v1/users/profile/image`
+- `POST /api/v1/users/<int:user_id>/follow`
+- `DELETE /api/v1/users/<int:user_id>/follow`
+- `GET /api/v1/users/<int:user_id>/followers`
+- `GET /api/v1/users/<int:user_id>/followings`
+- `GET /api/v1/users/<int:user_id>/blocked`
+- `POST /api/v1/users/<int:user_id>/block`
+- `DELETE /api/v1/users/<int:user_id>/block`
+- `POST /api/v1/users/<int:user_id>/report`
+- `PUT /api/v1/users/<int:report_id>/report-inspector`
+- `POST /api/v1/users/<int:user_id>/suspend`
+
+### Feed
+- `GET /api/v1/feed`
+
+### Posts
+- `GET /api/v1/posts/<string:username>`
+- `GET /api/v1/posts/<int:post_id>`
+- `GET /api/v1/posts/<int:post_id>/liked-users`
+- `GET /api/v1/posts/<int:post_id>/bookmarked-users`
+- `GET /api/v1/posts/<int:post_id>/reposted-users`
+- `GET /api/v1/posts/<int:post_id>/qouted-users`
+- `POST /api/v1/posts`
+- `POST /api/v1/posts/<int:post_id>/repost`
+- `DELETE /api/v1/posts/<int:post_id>/repost`
+- `POST /api/v1/posts/<int:post_id>/like`
+- `DELETE /api/v1/posts/<int:post_id>/like`
+- `POST /api/v1/posts/<int:post_id>/bookmark`
+- `DELETE /api/v1/posts/<int:post_id>/bookmark`
+- `DELETE /api/v1/posts/<int:post_id>`
+- `PATCH /api/v1/posts/<int:post_id>`
+- `POST /api/v1/posts/<int:post_id>/report`
+- `POST /api/v1/posts/<int:post_id>/report-inspector`
+- `GET /api/v1/posts/<int:post_id>/replies`
+- `POST /api/v1/posts/<int:post_id>/template`
+- `DELETE /api/v1/posts/<int:post_id>/template`
+
+### Collections
+- `GET /api/v1/collections/list/<int:user_id>`
+- `GET /api/v1/collections/<int:collection_id>`
+- `POST /api/v1/collections`
+- `DELETE /api/v1/collections/<int:collection_id>`
+- `PATCH /api/v1/collections/<int:collection_id>`
+- `POST /api/v1/collections/<int:collection_id>/<int:post_id>`
+- `DELETE /api/v1/collections/<int:collection_id>/<int:post_id>`
+
+### Notifications
+- `GET /api/v1/notifications`
+- `GET /api/v1/notifications/unread-count`
+- `PATCH /api/v1/notifications/<int:notification_id>/clicked`
+
+### Search
+- `GET /api/v1/search`
+- `GET /api/v1/search/suggestion`
+- `GET /api/v1/trending`
+- `GET /api/v1/trending/<string:hash_tag>/post`
+
+### Media / asset delivery
+- `GET /api/v1/get_post_media/<int:post_id>`
+- `GET /api/v1/post_media/<path:filename>`
+- `GET /api/v1/get_profile_image/<string:username>`
+- `GET /api/v1/user_profile/<path:filename>`
+
+Refer to the route handlers under [routes/v1](routes/v1) for exact request and response details.
 
 ## Real-time Notifications
 
