@@ -183,9 +183,4 @@ TBD — add your preferred license file at the repo root (e.g., `LICENSE`).
 
 ---
 
-If you'd like, I can also:
-
-- Expand the API section with full request/response examples.
-- Create a root-level `README.md` summarizing the whole Project-MemeStore.
-- Add a simple Postman/HTTPie collection for quick API testing.
 
