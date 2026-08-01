@@ -15,7 +15,7 @@ A project for social media for sharing posts
 - **WebSockets Notifications:** Real-time notification delivery powered by Flask-SocketIO.
 - **JWT Authentication:** Secure session and auth flows using JWT tokens for access and refresh.
 - **Role-Based Access Control:** Strong RBAC system governing endpoint permissions and user roles.
-- **Redis & Caching:** Redis is used for caching, pub/sub, and realtime session/notifications support.
+- **Redis & Caching:** Redis is used for caching, for ratelimiting.
 - **Background Workers & Queues:** Python’s built-in queue mechanism is used to process asynchronous tasks such as notifications, emails, and other background jobs.
 - **Rate Limiting:** Request throttling is enforced across key API endpoints.
 
@@ -47,11 +47,11 @@ A project for social media for sharing posts
 - Chat (Planned - not implemented yet)
 
 
-## Tech Stack
+<!--## Tech Stack
 - Frontend: Html, Tailwind CSS, Vanilla JS
 - Backend: Python, Flask, SQLAlchemy, Flask-CORS, Redis, Resend, Cloudinary
 - Database: PostgreSQL
-- Deployment: Vercel (Frontend, Backend)
+- Deployment: Vercel (Frontend, Backend)-->
 
 ## System Architecture
 ### Backend
