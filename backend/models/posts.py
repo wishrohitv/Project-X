@@ -82,7 +82,7 @@ class Posts(Base):
                     'replying_to': {self.replying_to!r},
                     'is_template': {self.is_template!r},
                     'is_deleted': {self.is_deleted!r},
-                    'deleted_on': {self.deleted_on!r},
+                    'deleted_at': {self.deleted_at!r},
                     'created_at': {self.created_at!r},
                     'updated_at': {self.updated_at!r},
                 )"""
