@@ -386,7 +386,7 @@ def _user_posts(
         if user.account_status == "deleted":
             raise ForbiddenError("Account is deleted")
         if user.account_status == "banned":
-            return ForbiddenError("Account is banned")
+            raise ForbiddenError("Account is banned")
 
         if fetch_bookmarked:
             conditions.append(Bookmark.user_id == user.id)
