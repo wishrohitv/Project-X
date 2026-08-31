@@ -89,7 +89,7 @@ def _delete_collection(collection_id: int, session_user_id: int):
             .first()
         )
         if not collection:
-            raise RepoError(404, "Collection not found or unauthorized")
+            raise ResourceNotFoundError("Collection not found or unauthorized")
         stmt = delete(CollectionData).filter_by(collection_id=collection_id)
         stmt1 = delete(Collections).filter_by(id=collection_id)
         session.execute(stmt)
@@ -98,4 +98,4 @@ def _delete_collection(collection_id: int, session_user_id: int):
         session.close()
     except Exception as e:
         session.rollback()
-        raise RepoError(500, f"Error while deleting collection :{e}")
+        raise InternalServerError(f"Error while deleting collection") from e
