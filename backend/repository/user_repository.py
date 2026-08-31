@@ -462,7 +462,7 @@ def _get_user_avatar(username: str):
         return redirect(
             user[1]
             if USE_CLOUDINARY_STORAGE
-            else f"{Settings.API_ROOT_URL or request.host_url}{url_for('return_assets.serve_image', filename=fname(user[2], user[3]))}"
+            else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(user[2], user[3]))}"
         )
     except AppError:
         raise
