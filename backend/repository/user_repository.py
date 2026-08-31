@@ -222,7 +222,7 @@ def _get_user_profile(
                 "name": user[0].name,
                 "username": user[0].username,
                 "email": user[0].email if session_user_id == user[0].id else "",
-                "join_date": user[0].created_at.strftime("%Y-%m-%d %H:%M:%S"),
+                "join_date": user[0].created_at.isoformat(),
                 "role": user.role,
                 "account_status": user[0].account_status.value,
                 "bio": user[1],
