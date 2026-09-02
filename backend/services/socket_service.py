@@ -1,9 +1,9 @@
-from modules import Namespace, emit, join_room, jwt, request, rooms
+from modules import Namespace, emit, join_room, jwt, request, rooms, logging
 from settings import Settings
-from utils import Logging, decode_jwt_token
+from utils import decode_jwt_token
 from utils.extensions import socketio
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 class NotificationServer(Namespace):

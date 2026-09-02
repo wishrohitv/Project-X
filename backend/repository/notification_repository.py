@@ -1,19 +1,18 @@
 from database import SessionLocal, redis_client
 from models import Notifications
 from models.enums import NotificationType
-from modules import func, json, or_, select
+from modules import func, json, or_, select, logging
 from utils import (
     AppError,
     BadRequestError,
     ConflictError,
     InternalServerError,
-    Logging,
     ResourceNotFoundError,
     SuccessResponse,
     datetime_utc,
 )
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 def _create_notification(

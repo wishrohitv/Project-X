@@ -1,6 +1,6 @@
 from config import API_ENDPOINTS
 from middlewares import rate_limiter_middleware, verify_request_middleware
-from modules import Blueprint, request
+from modules import Blueprint, logging, request
 from repository.notification_repository import (
     _get_notifications,
     _track_notification_click,
@@ -12,12 +12,11 @@ from utils import (
     RateLimitExceededError,
     SuccessResponse,
 )
-from utils.logger import Logging
 
 notification_blueprint = Blueprint("notifications", __name__)
 
 route = API_ENDPOINTS()
-logger = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 # /notifications GET

@@ -8,20 +8,22 @@ from modules import (
     request,
     time,
     traceback,
+    logging
 )
 from repository.init_db_setup import init_db_setup
 from services.socket_service import NotificationServer
 from settings import Settings
 from tasks import start_worker
-from utils import AppError, Logging, configure_logging
+from utils import AppError
 from utils.extensions import socketio
 
-Log = Logging(__name__)
 
 
 def run_app():
     # Configure logging
-    configure_logging()
+    logging.basicConfig(level=logging.INFO)
+    Log = logging.getLogger(__name__)
+
 
     # Initialize database
     initialize_db()

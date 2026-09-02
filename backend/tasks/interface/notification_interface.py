@@ -1,11 +1,12 @@
 from database import SessionLocal
 from models import Posts, Users
 from models.enums import NotificationType
+from modules import logging
 from repository.notification_repository import _create_notification
-from utils import Logging, get_usernames
+from utils import get_usernames
 from utils.extensions import socketio
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 def mention(

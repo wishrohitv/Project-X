@@ -9,18 +9,18 @@ from modules import (
     request,
     select,
     url_for,
+    logging,
 )
 from settings import Settings
 from utils import (
     AppError,
     BadRequestError,
     InternalServerError,
-    Logging,
     SuccessResponse,
     fname,
 )
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 def _get_home_feed(

@@ -60,5 +60,3 @@ ALLOWED_POST_FILE_MIMETYPE: dict[str, str] = {
 # Public directory to store clients media data
 PUBLIC_DIRECTORY_PROFILES: str = "public/profiles"
 PUBLIC_DIRECTORY_POSTS: str = "public/posts"
-
-LOGGING_PATH: str = "logs"

@@ -1,12 +1,12 @@
 from database import SessionLocal, redis_client
 from models import Posts, Users
-from modules import APP_NAME
+from modules import APP_NAME, logging
 
 # from repository.post_repository import _create_post
 from services.bot_service import gemini_agent, generate_bot_response
-from utils import Logging, get_usernames
+from utils import  get_usernames
 
-log = Logging(__name__)
+log = logging.getLogger(__name__)
 
 
 def process_user_requests(

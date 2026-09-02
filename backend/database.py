@@ -1,12 +1,11 @@
 import sys
 
 import redis
-from modules import create_engine, os, sessionmaker
+from modules import create_engine, logging, os, sessionmaker
 from redis import RedisError
 from settings import Settings
-from utils import Logging
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 try:

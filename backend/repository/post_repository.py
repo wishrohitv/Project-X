@@ -29,6 +29,7 @@ from modules import (
     time,
     update,
     url_for,
+    logging
 )
 from services.cloudinary_service import delete_media
 from tasks import add_task_in_queue
@@ -39,7 +40,6 @@ from utils import (
     BadRequestError,
     ForbiddenError,
     InternalServerError,
-    Logging,
     ResourceNotFoundError,
     SuccessResponse,
     UnAuthorizedError,
@@ -49,7 +49,7 @@ from utils import (
 
 from .feed_repository import _query_posts
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 def _create_post(

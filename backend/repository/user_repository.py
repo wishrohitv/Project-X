@@ -27,6 +27,7 @@ from modules import (
     select,
     update,
     url_for,
+    logging
 )
 from services.cloudinary_service import delete_media
 from settings import Settings
@@ -37,13 +38,12 @@ from utils import (
     BadRequestError,
     ConflictError,
     InternalServerError,
-    Logging,
     ResourceNotFoundError,
     SuccessResponse,
     fname,
 )
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 
 def _add_follower(session_user_id: int, user_id: int):

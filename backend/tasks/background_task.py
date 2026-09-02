@@ -1,7 +1,6 @@
-from modules import BACKGROUND_TASK_NUMBER_OF_THREADS, queue, threading
-from utils import Logging
+from modules import BACKGROUND_TASK_NUMBER_OF_THREADS, queue, threading, logging
 
-Log = Logging(__name__)
+Log = logging.getLogger(__name__)
 
 task_queue = queue.Queue()
 
