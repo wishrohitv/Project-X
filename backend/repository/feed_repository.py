@@ -35,8 +35,9 @@ def _get_home_feed(
 
     redis_key = f"home_feed:{offset}:{limit}"
     cached_feed = redis_client.get(redis_key)
-    if not cached_feed:
+    if cached_feed:
         Log.info("Redis hit: returning cached home feed")
+
         return SuccessResponse(
             data=json.loads(cached_feed),
             message="Home feed fetched successfully",
@@ -214,10 +215,9 @@ def _query_posts(
                 else Posts.created_at.asc()
             )
         )
-        print(stmt)
+
         get_feed = session.execute(stmt).all()
 
-        print(get_feed)
         feed_obj = [
             {
                 "user": {
