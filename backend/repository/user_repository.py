@@ -482,7 +482,7 @@ def _get_users_followers(
     join_condition = Users.id == Follower.follower_id
     where_condition = [Follower.user_id == user_id]
 
-    users = _fetch_users_follwer_and_blocked_user(
+    users = _fetch_users_follower_and_blocked_user(
         join_model=join_model,
         join_condition=join_condition,
         where_condition=where_condition,
@@ -503,7 +503,7 @@ def _get_users_followings(
     join_condition = Follower.user_id == Users.id
     where_condition = [Follower.follower_id == user_id]
 
-    users = _fetch_users_follwer_and_blocked_user(
+    users = _fetch_users_follower_and_blocked_user(
         join_model=join_model,
         join_condition=join_condition,
         where_condition=where_condition,
@@ -524,7 +524,7 @@ def _get_users_blocked_users(
     join_condition = BlockedUsers.blocked_to == Users.id
     where_condition = [BlockedUsers.user_id == user_id]
 
-    users = _fetch_users_follwer_and_blocked_user(
+    users = _fetch_users_follower_and_blocked_user(
         join_model=join_model,
         join_condition=join_condition,
         where_condition=where_condition,
@@ -535,7 +535,7 @@ def _get_users_blocked_users(
     return users
 
 
-def _fetch_users_follwer_and_blocked_user(
+def _fetch_users_follower_and_blocked_user(
     join_model,
     join_condition,
     where_condition,
