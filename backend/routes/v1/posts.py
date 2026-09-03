@@ -94,7 +94,7 @@ def posts_user_replies(logged_user: LoggedUser | None, *args, **kwargs):
         limit=limit,
         offset=offset,
         order_by=order_by,
-        look_for="replies_posts",
+        look_for="replied_posts",
     )
 
 
@@ -175,7 +175,7 @@ def posts_user_templates(logged_user: LoggedUser | None, *args, **kwargs):
         limit=limit,
         offset=offset,
         order_by=order_by,
-        look_for="templates",
+        look_for="template_posts",
     )
 
 

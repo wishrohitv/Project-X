@@ -1,5 +1,6 @@
 from werkzeug.exceptions import HTTPException
 
+
 class AppError(HTTPException):
     def __init__(self, code=500, error="AppError", message="Something went wrong"):
         super().__init__(description=message)

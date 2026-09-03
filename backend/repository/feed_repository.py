@@ -124,7 +124,7 @@ def _query_posts(
     offset: int = 0,
     limit: int = 10,
     session_user_id: int | None = None,
-    order_by: str= "latest",
+    order_by: str = "latest",
     join_model=None,
     join_conditions=None,
 ):
@@ -205,7 +205,15 @@ def _query_posts(
         else:
             stmt = stmt.where(*conditions)
 
-        stmt = stmt.limit(limit).offset(offset).order_by(Posts.created_at.desc() if order_by == "latest" else Posts.created_at.asc())
+        stmt = (
+            stmt.limit(limit)
+            .offset(offset)
+            .order_by(
+                Posts.created_at.desc()
+                if order_by == "latest"
+                else Posts.created_at.asc()
+            )
+        )
         print(stmt)
         get_feed = session.execute(stmt).all()
 

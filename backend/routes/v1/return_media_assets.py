@@ -11,7 +11,7 @@ from modules import (
     send_file,
     send_from_directory,
     url_for,
-    logging
+    logging,
 )
 from repository.post_repository import _get_post_media
 

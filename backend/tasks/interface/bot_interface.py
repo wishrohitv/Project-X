@@ -4,7 +4,7 @@ from modules import APP_NAME, logging
 
 # from repository.post_repository import _create_post
 from services.bot_service import gemini_agent, generate_bot_response
-from utils import  get_usernames
+from utils import get_usernames
 
 log = logging.getLogger(__name__)
 

@@ -358,7 +358,7 @@ def _user_posts(
     """
     if look_for not in [
         "posts",
-        "replies_posts",
+        "replied_posts",
         "bookmarked_posts",
         "liked_posts",
         "template_posts",
@@ -393,61 +393,32 @@ def _user_posts(
         if user.account_status == "banned":
             raise ForbiddenError("Account is banned")
 
-        posts = None
+        join_model = None
+        join_conditions = None
+
         if look_for == "bookmarked_posts":
             join_model = Bookmark
             join_conditions = Posts.id == Bookmark.post_id
             conditions.append(Bookmark.user_id == user.id)
-            posts = _query_posts(
-                conditions=conditions,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                session_user_id=session_user_id,
-                join_model=join_model,
-                join_conditions=join_conditions,
-            )
         elif look_for == "liked_posts":
             join_model = Likes
             join_conditions = Posts.id == Likes.post_id
             conditions.append(Likes.user_id == user.id)
-            posts = _query_posts(
-                conditions=conditions,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                session_user_id=session_user_id,
-                join_model=join_model,
-                join_conditions=join_conditions,
-            )
-        elif look_for == "templates_posts":
-            conditions.append(Posts.is_template == True)
-            posts = _query_posts(
-                conditions=conditions,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                session_user_id=session_user_id,
-            )
-        elif look_for == "replies_post":
+        elif look_for == "template_posts":
+            conditions.append(Posts.is_template.is_(True))
+        elif look_for == "replied_posts":
             conditions.append(Posts.user_id == user.id)
-            conditions.append(Posts.is_reply == True)
-            posts = _query_posts(
-                conditions=conditions,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                session_user_id=session_user_id,
-            )
-        else:
-            # Only post porfile posts
-            posts = _query_posts(
-                conditions=conditions,
-                offset=offset,
-                limit=limit,
-                order_by=order_by,
-                session_user_id=session_user_id,
-            )
+            conditions.append(Posts.is_reply.is_(True))
+
+        posts = _query_posts(
+            conditions=conditions,
+            offset=offset,
+            limit=limit,
+            order_by=order_by,
+            session_user_id=session_user_id,
+            join_model=join_model,
+            join_conditions=join_conditions,
+        )
         redis_client.set(redis_key, json.dumps(posts), ex=100)
 
         Log.info(f"Cache miss for user_posts: {redis_key}")

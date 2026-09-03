@@ -27,7 +27,7 @@ from modules import (
     select,
     update,
     url_for,
-    logging
+    logging,
 )
 from services.cloudinary_service import delete_media
 from settings import Settings

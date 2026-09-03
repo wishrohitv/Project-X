@@ -8,7 +8,7 @@ from modules import (
     request,
     time,
     traceback,
-    logging
+    logging,
 )
 from repository.init_db_setup import init_db_setup
 from services.socket_service import NotificationServer
@@ -18,12 +18,10 @@ from utils import AppError
 from utils.extensions import socketio
 
 
-
 def run_app():
     # Configure logging
     logging.basicConfig(level=logging.INFO)
     Log = logging.getLogger(__name__)
-
 
     # Initialize database
     initialize_db()
