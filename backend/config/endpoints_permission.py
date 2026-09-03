@@ -169,6 +169,12 @@ class API_ENDPOINTS:
         methods=["GET"],
         partial_access=True,
     )
+    feed_followings = RouteAccess(
+        route_name="/feed/followings",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        methods=["GET"],
+        partial_access=False,
+    )
     # Profile
     profile_image_upload = RouteAccess(
         route_name="/users/profile/image",
@@ -194,6 +200,30 @@ class API_ENDPOINTS:
     # Posts
     posts = RouteAccess(
         route_name="/posts/<string:username>",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        methods=["GET"],
+        partial_access=True,
+    )
+    posts_user_replies = RouteAccess(
+        route_name="/posts/<string:username>/replies",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        methods=["GET"],
+        partial_access=True,
+    )
+    posts_user_bookmarked = RouteAccess(
+        route_name="/posts/<string:username>/bookmarked",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        methods=["GET"],
+        partial_access=False,
+    )
+    posts_user_liked = RouteAccess(
+        route_name="/posts/<string:username>/liked",
+        role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
+        methods=["GET"],
+        partial_access=False,
+    )
+    posts_user_templates = RouteAccess(
+        route_name="/posts/<string:username>/templates",
         role_permission=[ROLE.SUPER_ADMIN, ROLE.MODERATOR, ROLE.USER],
         methods=["GET"],
         partial_access=True,

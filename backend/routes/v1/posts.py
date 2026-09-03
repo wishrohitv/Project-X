@@ -53,21 +53,129 @@ route = API_ENDPOINTS()
 @verify_request_middleware(route.posts)
 def posts(logged_user: LoggedUser | None, *args, **kwargs):
     username: str = kwargs["username"]
-    order_by = request.args.get("order_by")
+    order_by = request.args.get("order_by", type=str, default="latest")
     category = request.args.get("category")
     limit = request.args.get("limit", type=int, default=10)
     offset = request.args.get("offset", type=int, default=0)
-    template = str(request.args.get("template", default="False")).lower() == "true"
-    bookmark = str(request.args.get("bookmark", default="False")).lower() == "true"
     session_user_id: int | None = None if logged_user is None else logged_user.user_id
+
+    if order_by not in ["latest", "popular"]:
+        raise BadRequestError("Invalid order_by value")
 
     return _user_posts(
         username=username,
         session_user_id=session_user_id,
         limit=limit,
         offset=offset,
-        fetch_template=template,
-        fetch_bookmarked=bookmark,
+    )
+
+
+# /posts/<string:username>/replies GET
+# Unlogged user can access public posts
+@posts_blueprint.route(
+    route.posts_user_replies.route_name,
+    methods=route.posts_user_replies.methods,
+)
+@rate_limiter_middleware(route.posts_user_replies)
+@verify_request_middleware(route.posts_user_replies)
+def posts_user_replies(logged_user: LoggedUser | None, *args, **kwargs):
+    username: str = kwargs["username"]
+    order_by = request.args.get("order_by", type=str, default="latest")
+    limit = request.args.get("limit", type=int, default=10)
+    offset = request.args.get("offset", type=int, default=0)
+    session_user_id: int | None = None if logged_user is None else logged_user.user_id
+
+    if order_by not in ["latest", "popular"]:
+        raise BadRequestError("Invalid order_by value")
+
+    return _user_posts(
+        username=username,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+        order_by=order_by,
+        look_for="replies_posts",
+    )
+
+
+# /posts/<string:username>/bookmarked GET
+@posts_blueprint.route(
+    route.posts_user_bookmarked.route_name,
+    methods=route.posts_user_bookmarked.methods,
+)
+@rate_limiter_middleware(route.posts_user_bookmarked)
+@verify_request_middleware(route.posts_user_bookmarked)
+def posts_user_bookmarked(logged_user: LoggedUser | None, *args, **kwargs):
+    username: str = kwargs["username"]
+    order_by = request.args.get("order_by", type=str, default="latest")
+    limit = request.args.get("limit", type=int, default=10)
+    offset = request.args.get("offset", type=int, default=0)
+    session_user_id: int | None = None if logged_user is None else logged_user.user_id
+
+    if order_by not in ["latest", "popular"]:
+        raise BadRequestError("Invalid order_by value")
+
+    return _user_posts(
+        username=username,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+        order_by=order_by,
+        look_for="bookmarked_posts",
+    )
+
+
+# /posts/<string:username>/liked GET
+@posts_blueprint.route(
+    route.posts_user_liked.route_name,
+    methods=route.posts_user_liked.methods,
+)
+@rate_limiter_middleware(route.posts_user_liked)
+@verify_request_middleware(route.posts_user_liked)
+def posts_user_liked(logged_user: LoggedUser | None, *args, **kwargs):
+    username: str = kwargs["username"]
+    order_by = request.args.get("order_by", type=str, default="latest")
+    limit = request.args.get("limit", type=int, default=10)
+    offset = request.args.get("offset", type=int, default=0)
+    session_user_id: int | None = None if logged_user is None else logged_user.user_id
+
+    if order_by not in ["latest", "popular"]:
+        raise BadRequestError("Invalid order_by value")
+
+    return _user_posts(
+        username=username,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+        order_by=order_by,
+        look_for="liked_posts",
+    )
+
+
+# /posts/<string:username>/templates GET
+@posts_blueprint.route(
+    route.posts_user_templates.route_name,
+    methods=route.posts_user_templates.methods,
+)
+@rate_limiter_middleware(route.posts_user_templates)
+@verify_request_middleware(route.posts_user_templates)
+def posts_user_templates(logged_user: LoggedUser | None, *args, **kwargs):
+    username: str = kwargs["username"]
+    order_by = request.args.get("order_by", type=str, default="latest")
+    limit = request.args.get("limit", type=int, default=10)
+    offset = request.args.get("offset", type=int, default=0)
+    session_user_id: int | None = None if logged_user is None else logged_user.user_id
+
+    if order_by not in ["latest", "popular"]:
+        raise BadRequestError("Invalid order_by value")
+
+    return _user_posts(
+        username=username,
+        session_user_id=session_user_id,
+        limit=limit,
+        offset=offset,
+        order_by=order_by,
+        look_for="templates",
     )
 
 

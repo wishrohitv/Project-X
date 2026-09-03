@@ -1,5 +1,5 @@
 from database import SessionLocal, redis_client
-from models import Bookmark, Category, Likes, Posts, Profile, Reposts, Users
+from models import Bookmark, Category, Follower, Likes, Posts, Profile, Reposts, Users
 from modules import (
     USE_CLOUDINARY_STORAGE,
     aliased,
@@ -35,7 +35,7 @@ def _get_home_feed(
 
     redis_key = f"home_feed:{offset}:{limit}"
     cached_feed = redis_client.get(redis_key)
-    if cached_feed:
+    if not cached_feed:
         Log.info("Redis hit: returning cached home feed")
         return SuccessResponse(
             data=json.loads(cached_feed),
@@ -67,12 +67,66 @@ def _get_home_feed(
         session.close()
 
 
+def _get_home_feed_followings(
+    session_user_id: int,
+    offset: int = 0,
+    limit: int = 10,
+):
+    session = SessionLocal()
+
+    redis_key = f"home_feed_followings:{session_user_id}:{offset}:{limit}"
+    cached_feed = redis_client.get(redis_key)
+    if cached_feed:
+        Log.info("Redis hit: returning cached home feed")
+        return SuccessResponse(
+            data=json.loads(cached_feed),
+            message="Home feed fetched successfully",
+            status_code=200,
+        )
+
+    try:
+        # Fetch only public posts and isReply false
+        conditions = [
+            Posts.visibility,
+            Posts.is_reply.is_(False),
+            Posts.is_deleted.is_(False),
+            Follower.follower_id == session_user_id,
+        ]
+        join_model = Follower
+        join_conditions = Follower.user_id == Users.id
+
+        feed = _query_posts(
+            conditions=conditions,
+            category=[],
+            offset=offset,
+            limit=limit,
+            session_user_id=session_user_id,
+            join_model=join_model,
+            join_conditions=join_conditions,
+        )
+
+        Log.info("Redis miss: fetching home feed from database")
+        redis_client.set(redis_key, json.dumps(feed), ex=100)
+        return SuccessResponse(
+            data=feed, message="Home feed fetched successfully", status_code=200
+        )
+    except AppError:
+        raise
+    except Exception as e:
+        raise InternalServerError("Error while fetching home feed") from e
+    finally:
+        session.close()
+
+
 def _query_posts(
     conditions,
     category: list[str] = [],
     offset: int = 0,
     limit: int = 10,
     session_user_id: int | None = None,
+    order_by: str= "latest",
+    join_model=None,
+    join_conditions=None,
 ):
     session = SessionLocal()
     """
@@ -144,12 +198,18 @@ def _query_posts(
             )
             .join_from(Users, Posts)
             .join_from(Users, Profile)
-            .where(*conditions)
-            .limit(limit)
-            .offset(offset)
         )
+
+        if join_model:
+            stmt = stmt.join_from(Users, join_model, join_conditions).where(*conditions)
+        else:
+            stmt = stmt.where(*conditions)
+
+        stmt = stmt.limit(limit).offset(offset).order_by(Posts.created_at.desc() if order_by == "latest" else Posts.created_at.asc())
+        print(stmt)
         get_feed = session.execute(stmt).all()
 
+        print(get_feed)
         feed_obj = [
             {
                 "user": {

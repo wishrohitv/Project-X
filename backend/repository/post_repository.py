@@ -10,7 +10,6 @@ from models import (
     Reposts,
     Users,
 )
-from settings import Settings
 from modules import (
     PUBLIC_DIRECTORY_POSTS,
     USE_CLOUDINARY_STORAGE,
@@ -21,6 +20,7 @@ from modules import (
     functools,
     json,
     literal,
+    logging,
     make_response,
     or_,
     os,
@@ -29,9 +29,9 @@ from modules import (
     time,
     update,
     url_for,
-    logging
 )
 from services.cloudinary_service import delete_media
+from settings import Settings
 from tasks import add_task_in_queue
 from tasks.interface import like, mention, process_user_requests, reply
 from tasks.interface import repost as repost_interface
@@ -345,9 +345,8 @@ def _user_posts(
     username: str,
     session_user_id: int | None = None,
     category: int | None = None,
-    order_by="recent",
-    fetch_template: bool = False,
-    fetch_bookmarked: bool = False,
+    order_by: str = "latest",
+    look_for: str = "posts",
     limit: int = 10,
     offset: int = 0,
 ):
@@ -357,7 +356,16 @@ def _user_posts(
     if user is logged but session_user_id != username then fetch public posts only
     else fetch public posts only
     """
-    redis_key = f"user_posts:{username}:{session_user_id}:{category}:{order_by}:{fetch_template}:{fetch_bookmarked}:{limit}:{offset}"
+    if look_for not in [
+        "posts",
+        "replies_posts",
+        "bookmarked_posts",
+        "liked_posts",
+        "template_posts",
+    ]:
+        raise BadRequestError("Invalid look_for value")
+
+    redis_key = f"user_posts:{username}:{look_for}:{session_user_id}:{category}:{order_by}:{limit}:{offset}"
 
     cached_result = redis_client.get(redis_key)
 
@@ -370,9 +378,6 @@ def _user_posts(
 
     try:
         conditions = []
-        if fetch_template:
-            conditions.append(Posts.is_template)
-
         if not session_user_id:
             conditions.append(Posts.visibility)
 
@@ -388,15 +393,61 @@ def _user_posts(
         if user.account_status == "banned":
             raise ForbiddenError("Account is banned")
 
-        if fetch_bookmarked:
+        posts = None
+        if look_for == "bookmarked_posts":
+            join_model = Bookmark
+            join_conditions = Posts.id == Bookmark.post_id
             conditions.append(Bookmark.user_id == user.id)
-
-        posts = _query_posts(
-            conditions=conditions,
-            offset=offset,
-            limit=limit,
-            session_user_id=session_user_id,
-        )
+            posts = _query_posts(
+                conditions=conditions,
+                offset=offset,
+                limit=limit,
+                order_by=order_by,
+                session_user_id=session_user_id,
+                join_model=join_model,
+                join_conditions=join_conditions,
+            )
+        elif look_for == "liked_posts":
+            join_model = Likes
+            join_conditions = Posts.id == Likes.post_id
+            conditions.append(Likes.user_id == user.id)
+            posts = _query_posts(
+                conditions=conditions,
+                offset=offset,
+                limit=limit,
+                order_by=order_by,
+                session_user_id=session_user_id,
+                join_model=join_model,
+                join_conditions=join_conditions,
+            )
+        elif look_for == "templates_posts":
+            conditions.append(Posts.is_template == True)
+            posts = _query_posts(
+                conditions=conditions,
+                offset=offset,
+                limit=limit,
+                order_by=order_by,
+                session_user_id=session_user_id,
+            )
+        elif look_for == "replies_post":
+            conditions.append(Posts.user_id == user.id)
+            conditions.append(Posts.is_reply == True)
+            posts = _query_posts(
+                conditions=conditions,
+                offset=offset,
+                limit=limit,
+                order_by=order_by,
+                session_user_id=session_user_id,
+            )
+        else:
+            # Only post porfile posts
+            posts = _query_posts(
+                conditions=conditions,
+                offset=offset,
+                limit=limit,
+                order_by=order_by,
+                session_user_id=session_user_id,
+            )
         redis_client.set(redis_key, json.dumps(posts), ex=100)
 
         Log.info(f"Cache miss for user_posts: {redis_key}")
