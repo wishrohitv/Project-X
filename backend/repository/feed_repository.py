@@ -6,10 +6,11 @@ from modules import (
     exists,
     func,
     json,
+    literal,
+    logging,
     request,
     select,
     url_for,
-    logging,
 )
 from settings import Settings
 from utils import (
@@ -122,18 +123,24 @@ def _query_posts(
                     select(Likes).where(
                         Likes.post_id == Posts.id, Likes.user_id == session_user_id
                     )
-                ).label("is_liked"),
+                ).label("is_liked")
+                if session_user_id
+                else literal(False).label("is_liked"),
                 exists(
                     select(Bookmark).where(
                         Bookmark.post_id == Posts.id,
                         Bookmark.user_id == session_user_id,
                     )
-                ).label("is_bookmarked"),
+                ).label("is_bookmarked")
+                if session_user_id
+                else literal(False).label("is_bookmarked"),
                 exists(
                     select(Reposts).where(
                         Reposts.post_id == Posts.id, Reposts.user_id == session_user_id
                     )
-                ).label("is_reposted"),
+                ).label("is_reposted")
+                if session_user_id
+                else literal(False).label("is_reposted"),
             )
             .join_from(Users, Posts)
             .join_from(Users, Profile)
