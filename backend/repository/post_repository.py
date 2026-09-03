@@ -381,8 +381,6 @@ def _user_posts(
         if not session_user_id:
             conditions.append(Posts.visibility)
 
-        conditions.append(Users.username == username)
-
         user = session.query(Users).where(Users.username == username).first()
         if not user:
             raise ResourceNotFoundError("User not found")
@@ -409,6 +407,9 @@ def _user_posts(
         elif look_for == "replied_posts":
             conditions.append(Posts.user_id == user.id)
             conditions.append(Posts.is_reply.is_(True))
+        else:
+            # Only for posts where username's id matchs
+            conditions.append(Users.id == user.id)
 
         posts = _query_posts(
             conditions=conditions,

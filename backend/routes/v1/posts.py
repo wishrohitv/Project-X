@@ -110,7 +110,7 @@ def posts_user_bookmarked(logged_user: LoggedUser | None, *args, **kwargs):
     order_by = request.args.get("order_by", type=str, default="latest")
     limit = request.args.get("limit", type=int, default=10)
     offset = request.args.get("offset", type=int, default=0)
-    session_user_id: int | None = None if logged_user is None else logged_user.user_id
+    session_user_id: int = logged_user.user_id
 
     if order_by not in ["latest", "popular"]:
         raise BadRequestError("Invalid order_by value")
@@ -137,7 +137,7 @@ def posts_user_liked(logged_user: LoggedUser | None, *args, **kwargs):
     order_by = request.args.get("order_by", type=str, default="latest")
     limit = request.args.get("limit", type=int, default=10)
     offset = request.args.get("offset", type=int, default=0)
-    session_user_id: int | None = None if logged_user is None else logged_user.user_id
+    session_user_id: int = logged_user.user_id
 
     if order_by not in ["latest", "popular"]:
         raise BadRequestError("Invalid order_by value")

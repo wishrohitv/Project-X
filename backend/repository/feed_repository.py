@@ -163,6 +163,22 @@ def _query_posts(
             .where(reply.parent_post_id == Posts.id, reply.is_reply.is_(True))
             .scalar_subquery()
         )
+
+        bookmark = aliased(Bookmark)
+        is_bookmarked = (
+            select(bookmark.id)
+            .where(bookmark.post_id == Posts.id, bookmark.user_id == session_user_id)
+            .correlate(Posts)
+            .scalar_subquery()
+        )
+        like = aliased(Likes)
+        is_liked = (
+            select(like.id)
+            .where(like.post_id == Posts.id, like.user_id == session_user_id)
+            .correlate(Posts)
+            .scalar_subquery()
+        )
+
         stmt = (
             select(
                 Users.username,
@@ -174,19 +190,10 @@ def _query_posts(
                 repost_count.label("repost_count"),
                 bookmark_count.label("bookmark_count"),
                 repliesCount.label("replies_count"),
-                exists(
-                    select(Likes).where(
-                        Likes.post_id == Posts.id, Likes.user_id == session_user_id
-                    )
-                ).label("is_liked")
+                exists(is_liked).label("is_liked")
                 if session_user_id
                 else literal(False).label("is_liked"),
-                exists(
-                    select(Bookmark).where(
-                        Bookmark.post_id == Posts.id,
-                        Bookmark.user_id == session_user_id,
-                    )
-                ).label("is_bookmarked")
+                exists(is_bookmarked).label("is_bookmarked")
                 if session_user_id
                 else literal(False).label("is_bookmarked"),
                 exists(
@@ -235,7 +242,7 @@ def _query_posts(
                     "file_type": feed[1].file_type,
                     "file_extension": feed[1].file_extension,
                     "visibility": feed[1].visibility,
-                    "parent_post_id": _get_parent_post(
+                    "parent_post": _get_parent_post(
                         feed[1].parent_post_id, session_user_id
                     )
                     if not feed[1].is_reply
