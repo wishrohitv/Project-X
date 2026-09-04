@@ -2,7 +2,7 @@
 APP_NAME: str = "Project X"
 
 # App version
-APP_VERSION: str = "1.0.0"
+APP_VERSION: str = "v1.0.0"
 
 # Media storage
 USE_CLOUDINARY_STORAGE: bool = False  # If true then cloudinary service will be used for storing user uploaded media file, else local computer storage will be used to store media files
