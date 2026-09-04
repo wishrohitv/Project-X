@@ -131,6 +131,7 @@ def users_Update_profile_img(logged_user: LoggedUser, *args, **kwargs):
         media_public_id=_media_public_id,
         file_extension=file_extension,
         file_type=file.mimetype.split("/")[0],
+        media_url=_mediaUrl,
     )
 
 
