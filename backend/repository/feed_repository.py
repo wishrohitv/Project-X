@@ -25,9 +25,9 @@ Log = logging.getLogger(__name__)
 
 
 def _get_home_feed(
-    category: list = [],
     offset: int = 0,
     limit: int = 10,
+    category: list[int] = [],
     fetch_template: bool = False,
     session_user_id: int | None = None,
 ):
