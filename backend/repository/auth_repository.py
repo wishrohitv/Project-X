@@ -218,11 +218,15 @@ def _generate_otp_for_user(user_id: int | None = None, username: str | None = No
         raise InternalServerError("Failed to generate OTP") from e
 
 
-def _verify_user(user_id: int, entered_otp: str):
+def _verify_user(user_id: int | None, username: str | None, entered_otp: str):
     session = SessionLocal()
 
     try:
-        user = session.query(Users).filter(Users.id == user_id).first()
+        user = (
+            session.query(Users)
+            .filter(or_(Users.id == user_id, Users.username == username))
+            .first()
+        )
         if not user:
             raise ResourceNotFoundError("User not found")
         if user.is_verified:

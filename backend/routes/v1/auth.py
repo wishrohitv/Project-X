@@ -137,8 +137,12 @@ def generate_otp():
 def verify():
     body = request.get_json()
     user_id = body.get("user_id")
+    username = body.get("username")
     otp = body.get("otp")
-    return _verify_user(user_id, otp)
+
+    if not (user_id or username):
+        raise BadRequestError("user_id or username are required")
+    return _verify_user(user_id, username, otp)
 
 
 # /auth/c/user sessionUser only
