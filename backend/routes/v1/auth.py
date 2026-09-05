@@ -121,7 +121,11 @@ def refresh_token():
 def generate_otp():
     body = request.get_json()
     user_id = body.get("user_id")
-    return _generate_otp_for_user(user_id)
+    username = body.get("username")
+
+    if not (user_id or username):
+        raise BadRequestError("user_id or username are required")
+    return _generate_otp_for_user(user_id, username)
 
 
 # auth/otp/verify

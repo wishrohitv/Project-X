@@ -171,11 +171,11 @@ def _signup_user(
         session.close()
 
 
-def _generate_otp_for_user(user_id: int):
+def _generate_otp_for_user(user_id: int | None = None, username: str | None = None):
     session = SessionLocal()
     # TODO: check email bounce
 
-    redis_key = f"rate_limit_otp:{user_id}"
+    redis_key = f"rate_limit_otp:{user_id or username}"
     total_otp_generated_key = f"rate_limit_otp:{request.remote_addr}"
 
     total_otp_generated_count = redis_client.incr(total_otp_generated_key)
@@ -196,7 +196,11 @@ def _generate_otp_for_user(user_id: int):
         )
 
     try:
-        user = session.query(Users).filter(Users.id == user_id).first()
+        user = (
+            session.query(Users)
+            .filter(or_(Users.id == user_id, Users.username == username))
+            .first()
+        )
         if not user:
             raise ResourceNotFoundError("User not found")
         if user.is_verified:
