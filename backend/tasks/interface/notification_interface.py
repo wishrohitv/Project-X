@@ -306,11 +306,11 @@ def repost(post_id: int, session_user_id: int) -> None:
             # post id of the post
             "post_id": post_id,
         }
-        _create_notification(post.user_id, notic, NotificationType.like)
+        _create_notification(post.user_id, notic, NotificationType.repost)
         # Emit the notification to the user via SocketIO
         socketio.emit(
             "notification",
-            {"type": NotificationType.like.value, "notice": notic},
+            {"type": NotificationType.repost.value, "notice": notic},
             to=str(post.user_id),
             namespace="/notifications",
         )

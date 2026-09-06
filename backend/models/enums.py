@@ -18,6 +18,8 @@ class AccountStatus(PyEnum.Enum):
 # Notifications types
 class NotificationType(PyEnum.Enum):
     mention = "mention"
+    repost = "repost"
+    quote = "quote"
     suggestion = "suggestion"  # Recommendation of post
     reply = "reply"
     warning = "warning"
