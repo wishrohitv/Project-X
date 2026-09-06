@@ -183,6 +183,7 @@ def _query_posts(
             select(
                 Users.username,
                 Posts,
+                Users.name,
                 Profile.media_url,
                 Profile.media_public_id,
                 Profile.file_extension,
@@ -224,14 +225,15 @@ def _query_posts(
         )
 
         get_feed = session.execute(stmt).all()
-
+        print(get_feed[0].username)
         feed_obj = [
             {
                 "user": {
-                    "profile_img_url": feed[2]
+                    "profile_img_url": feed.profile_img_url
                     if USE_CLOUDINARY_STORAGE
                     else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(feed[3], feed[4]))}",
-                    "username": feed[0],
+                    "username": feed.username,
+                    "name": feed.name,
                     "user_id": feed[1].user_id,
                 },
                 "post": {
@@ -256,13 +258,13 @@ def _query_posts(
                     "post_media_url": feed[1].media_url
                     if USE_CLOUDINARY_STORAGE
                     else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=fname(feed[1].media_public_id, feed[1].file_extension, post=True))}",
-                    "like_count": feed[5],
-                    "repost_count": feed[6],
-                    "bookmark_count": feed[7],
-                    "replies_count": feed[8],
-                    "is_liked": feed[9],
-                    "is_bookmarked": feed[10],
-                    "is_reposted": feed[11],
+                    "like_count": feed.like_count,
+                    "repost_count": feed.repost_count,
+                    "bookmark_count": feed.bookmark_count,
+                    "replies_count": feed.replies_count,
+                    "is_liked": feed.is_liked,
+                    "is_bookmarked": feed.is_bookmarked,
+                    "is_reposted": feed.is_reposted,
                 },
             }
             for feed in get_feed
@@ -298,8 +300,9 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
 
         stmt = (
             select(
-                Users.username,
                 Posts,
+                Users.username,
+                Users.name,
                 Profile.media_url,
                 Profile.media_public_id,
                 Profile.file_extension,
@@ -315,24 +318,25 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
 
         post = {
             "user": {
-                "username": result[0],
-                "user_id": result[1].user_id,
-                "profile_img_url": result[2]
+                "username": result.username,
+                "name": result.name,
+                "user_id": result[0].user_id,
+                "profile_img_url": result.profile_img_url
                 if USE_CLOUDINARY_STORAGE
                 else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(result[3], result[4]))}",
             },
             "post": {
-                "post_id": result[1].id,
-                "title": result[1].text,
-                "file_type": result[1].file_type,
-                "file_extension": result[1].file_extension,
-                "created_at": result[1].created_at.isoformat(),
+                "post_id": result[0].id,
+                "title": result[0].text,
+                "file_type": result[0].file_type,
+                "file_extension": result[0].file_extension,
+                "created_at": result[0].created_at.isoformat(),
                 "age_rating": result[
-                    1
+                    0
                 ].age_rating.value,  # Return Enum class from db and get its value from
-                "post_media_url": result[1].media_url
+                "post_media_url": result[0].media_url
                 if USE_CLOUDINARY_STORAGE
-                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=fname(result[1].media_public_id, result[1].file_extension, post=True))}",
+                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=fname(result[0].media_public_id, result[0].file_extension, post=True))}",
             },
         }
         return {"status": 200, "data": post}
