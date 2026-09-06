@@ -225,11 +225,11 @@ def _query_posts(
         )
 
         get_feed = session.execute(stmt).all()
-        print(get_feed[0].username)
+
         feed_obj = [
             {
                 "user": {
-                    "profile_img_url": feed.profile_img_url
+                    "profile_img_url": feed.media_url
                     if USE_CLOUDINARY_STORAGE
                     else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(feed[3], feed[4]))}",
                     "username": feed.username,
