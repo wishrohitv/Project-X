@@ -33,7 +33,7 @@ from modules import (
 from services.cloudinary_service import delete_media
 from settings import Settings
 from tasks import add_task_in_queue
-from tasks.interface import like, mention, process_user_requests, reply
+from tasks.interface import like, process_user_requests, reply_n_mention
 from tasks.interface import repost as repost_interface
 from utils import (
     AppError,
@@ -88,32 +88,19 @@ def _create_post(
         session.commit()
         session.refresh(new_post)
 
-        # Create mention notification
-
-        # If the post is a reply, create reply notifications for the users being replied to
-        if is_reply:
-            add_task_in_queue(
-                functools.partial(
-                    reply,
-                    parent_post_id=parent_post_id,
-                    post_id=new_post.id,
-                    mentioned_usernames_by_system=replying_to,
-                    mentioned_by_user_id=user_id,
-                    text=text
-                    or "",  # If text is None, pass an empty string to avoid issues in the mention function
-                )
+        # Create reply, mention notifications for the users being replied to
+        add_task_in_queue(
+            functools.partial(
+                reply_n_mention,
+                parent_post_id=parent_post_id,
+                post_id=new_post.id,
+                mentioned_usernames_by_system=replying_to,
+                session_user_id=user_id,
+                text=text
+                or "",  # If text is None, pass an empty string to avoid issues in the mention function
             )
-        else:
-            # Send notification to mentioned users in the post
-            if text:
-                add_task_in_queue(
-                    functools.partial(
-                        mention,
-                        mentioned_by_user_id=user_id,
-                        post_id=new_post.id,
-                        text=text,
-                    )
-                )
+        )
+
         # process bot service if bot is tagged
         if text:
             add_task_in_queue(

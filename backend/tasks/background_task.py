@@ -9,9 +9,9 @@ def worker():
     while True:
         try:
             task = task_queue.get(timeout=1)
-            Log.info(f"Executing task: {task}")
+            Log.info(f"Executing task:::: {task}")
             task()  # Execute the task
-            Log.info(f"Task {task} completed")
+            Log.info(f"Task Execution {task} completed")
             task_queue.task_done()
         except queue.Empty:
             continue

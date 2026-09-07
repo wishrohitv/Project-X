@@ -1,7 +1,7 @@
 from database import SessionLocal, redis_client
 from models import Notifications
 from models.enums import NotificationType
-from modules import func, json, or_, select, logging
+from modules import func, json, logging, or_, select
 from utils import (
     AppError,
     BadRequestError,
@@ -17,13 +17,15 @@ Log = logging.getLogger(__name__)
 
 def _create_notification(
     user_id: int | None,
-    notice: dict,
+    author_user_id: int | None,
+    notice: dict[str, str | int] | None,
     type: NotificationType,
 ):
     session = SessionLocal()
     try:
         notification = Notifications(
             user_id=user_id,
+            author_user_id=author_user_id,
             notice=notice,
             type=type,
         )
