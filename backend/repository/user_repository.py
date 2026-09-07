@@ -7,6 +7,7 @@ from models import (
     ReportedUsers,
     Role,
     Sessions,
+    Posts,
     Users,
 )
 from modules import (
@@ -20,6 +21,7 @@ from modules import (
     functools,
     json,
     literal,
+    logging,
     or_,
     os,
     redirect,
@@ -27,7 +29,6 @@ from modules import (
     select,
     update,
     url_for,
-    logging,
 )
 from services.cloudinary_service import delete_media
 from settings import Settings
@@ -174,6 +175,8 @@ def _get_user_profile(
         follower_count = aliased(Follower)
         # User's following count
         following_count = aliased(Follower)
+        # User's posts count
+        post_count = aliased(Posts)
 
         match_by = {}
         if _user_id:
@@ -205,12 +208,15 @@ def _get_user_profile(
                     "is_following"  # Whether session user follows or not
                 ),
                 Role.role,
+                func.count(1)
+                .label("post_count"),
             )
             .select_from(Users)
             .filter_by(**match_by)  # Apply matches to User only while in context
             .outerjoin(Role, Role.id == Users.role)
             .outerjoin(follower_count, follower_count.user_id == Users.id)
             .outerjoin(following_count, following_count.follower_id == Users.id)
+            .outerjoin(post_count, post_count.user_id == Users.id)
             .outerjoin(Profile, Profile.user_id == Users.id)
             .group_by(Users.id, Profile.id, Role.id)
         )
@@ -233,6 +239,7 @@ def _get_user_profile(
                 "follower_count": user[6],
                 "following_count": user[7],
                 "is_following": user[8],
+                "post_count": user.post_count
             }
             redis_client.set(redis_key, json.dumps(users_dict), ex=100)
             Log.info(f"Cache miss for user: {redis_key}")
