@@ -410,6 +410,7 @@ def _user_posts(
         else:
             # Only for posts where username's id matchs
             conditions.append(Users.id == user.id)
+            conditions.append(Posts.is_reply.is_(False))
 
         posts = _query_posts(
             conditions=conditions,
