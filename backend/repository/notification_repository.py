@@ -93,6 +93,7 @@ def _get_notifications(
             .outerjoin(Users, Users.id == Notifications.author_user_id)
             .outerjoin(Profile, Users.id == Profile.user_id)
             .filter(*condition)
+            .order_by(Notifications.created_at.desc())
             .offset(offset)
             .limit(limit)
             .all()

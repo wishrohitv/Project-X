@@ -3,11 +3,11 @@ from models import (
     AccountStatus,
     BlockedUsers,
     Follower,
+    Posts,
     Profile,
     ReportedUsers,
     Role,
     Sessions,
-    Posts,
     Users,
 )
 from modules import (
@@ -164,19 +164,38 @@ def _get_user_profile(
 
     redis_key = f"user:{_user_id or _username or _email}"
     cached_user = redis_client.get(redis_key)
-    if cached_user:
-        Log.info(f"Cache hit for user: {redis_key}")
-        return SuccessResponse(
-            data=json.loads(cached_user), message="Fetched user detail successfully"
-        )
+    # if cached_user:
+    #     Log.info(f"Cache hit for user: {redis_key}")
+    #     return SuccessResponse(
+    #         data=json.loads(cached_user), message="Fetched user detail successfully"
+    #     )
 
     try:
         # User's follower count
-        follower_count = aliased(Follower)
+        follower = aliased(Follower)
+
+        follower_count = (
+            select(func.count(follower.user_id))
+            .where(follower.user_id == Users.id)
+            .correlate(Users)
+            .scalar_subquery()
+        )
         # User's following count
-        following_count = aliased(Follower)
+        following = aliased(Follower)
+        following_count = (
+            select(func.count(following.user_id))
+            .where(following.follower_id == Users.id)
+            .correlate(Users)
+            .scalar_subquery()
+        )
         # User's posts count
-        post_count = aliased(Posts)
+        post = aliased(Posts)
+        post_count = (
+            select(func.count(post.id))
+            .where(post.user_id == Users.id)
+            .correlate(Users)
+            .scalar_subquery()
+        )
 
         match_by = {}
         if _user_id:
@@ -196,8 +215,8 @@ def _get_user_profile(
                 Profile.media_url,
                 Profile.media_public_id,
                 Profile.file_extension,
-                func.count(follower_count.user_id).label("follower_count"),
-                func.count(following_count.follower_id).label("following_count"),
+                follower_count.label("follower_count"),
+                following_count.label("following_count"),
                 select(1)
                 .where(
                     Follower.follower_id == session_user_id,
@@ -206,19 +225,16 @@ def _get_user_profile(
                 .exists()
                 .label(
                     "is_following"  # Whether session user follows or not
-                ),
+                )
+                if session_user_id is not None
+                else literal(False),
                 Role.role,
-                func.count(1)
-                .label("post_count"),
+                post_count.label("post_count"),
             )
             .select_from(Users)
             .filter_by(**match_by)  # Apply matches to User only while in context
             .outerjoin(Role, Role.id == Users.role)
-            .outerjoin(follower_count, follower_count.user_id == Users.id)
-            .outerjoin(following_count, following_count.follower_id == Users.id)
-            .outerjoin(post_count, post_count.user_id == Users.id)
             .outerjoin(Profile, Profile.user_id == Users.id)
-            .group_by(Users.id, Profile.id, Role.id)
         )
         user = session.execute(stmt).first()
 
