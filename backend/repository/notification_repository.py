@@ -117,7 +117,6 @@ def _get_notifications(
                     "profile_img_url": notice.media_url
                     if USE_CLOUDINARY_STORAGE
                     else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(notice.media_public_id, notice.file_extension))}",
-                    "file_type": notice.file_type,
                 }
                 if notice[0].author_user_id
                 else None,
