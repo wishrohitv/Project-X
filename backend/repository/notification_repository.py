@@ -1,7 +1,17 @@
 from database import SessionLocal, redis_client
-from models import Notifications
+from models import Notifications, Profile, Users
 from models.enums import NotificationType
-from modules import func, json, logging, or_, select
+from modules import (
+    USE_CLOUDINARY_STORAGE,
+    func,
+    json,
+    logging,
+    or_,
+    request,
+    select,
+    url_for,
+)
+from settings import Settings
 from utils import (
     AppError,
     BadRequestError,
@@ -10,6 +20,7 @@ from utils import (
     ResourceNotFoundError,
     SuccessResponse,
     datetime_utc,
+    fname,
 )
 
 Log = logging.getLogger(__name__)
@@ -71,7 +82,16 @@ def _get_notifications(
 
     try:
         result = (
-            session.query(Notifications)
+            session.query(
+                Notifications,
+                Users.username,
+                Profile.media_url,
+                Profile.media_public_id,
+                Profile.file_extension,
+                Profile.file_type,
+            )
+            .outerjoin(Users, Users.id == Notifications.author_user_id)
+            .outerjoin(Profile, Users.id == Profile.user_id)
             .filter(*condition)
             .offset(offset)
             .limit(limit)
@@ -80,16 +100,27 @@ def _get_notifications(
 
         if not result:
             raise ResourceNotFoundError("No notification found")
+
         notifications = [
             {
-                "id": notice.id,
-                "type": notice.type.value,
-                "notice": notice.notice,
-                "created_at": notice.created_at.isoformat(),
-                "updated_at": notice.updated_at.isoformat(),
-                "read_at": notice.read_at.isoformat()
-                if notice.read_at is not None
-                else notice.read_at,
+                "id": notice[0].id,
+                "type": notice[0].type.value,
+                "notice": notice[0].notice,
+                "created_at": notice[0].created_at.isoformat(),
+                "updated_at": notice[0].updated_at.isoformat(),
+                "read_at": notice[0].read_at.isoformat()
+                if notice[0].read_at is not None
+                else notice[0].read_at,
+                "user": {
+                    "user_id": notice[0].author_user_id,
+                    "username": notice.username,
+                    "profile_img_url": notice.media_url
+                    if USE_CLOUDINARY_STORAGE
+                    else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(notice.media_public_id, notice.file_extension))}",
+                    "file_type": notice.file_type,
+                }
+                if notice[0].author_user_id
+                else None,
             }
             for notice in result
         ]
