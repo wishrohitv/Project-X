@@ -341,6 +341,7 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
         }
         return {"status": 200, "data": post}
     except Exception as e:
+        Log.exception("Error retrieving post: %s", e)
         return {"status": 500, "error": "Internal Server Error"}
     finally:
         session.close()
