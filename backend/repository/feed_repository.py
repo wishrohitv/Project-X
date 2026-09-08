@@ -321,7 +321,7 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
                 "username": result.username,
                 "name": result.name,
                 "user_id": result[0].user_id,
-                "profile_img_url": result.profile_img_url
+                "profile_img_url": result.media_url
                 if USE_CLOUDINARY_STORAGE
                 else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(result[3], result[4]))}",
             },
