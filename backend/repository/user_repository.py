@@ -255,7 +255,7 @@ def _get_user_profile(
                 "follower_count": user[6],
                 "following_count": user[7],
                 "is_following": user[8],
-                "post_count": user.post_count
+                "post_count": user.post_count,
             }
             redis_client.set(redis_key, json.dumps(users_dict), ex=100)
             Log.info(f"Cache miss for user: {redis_key}")

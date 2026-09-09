@@ -10,6 +10,7 @@ Log = logging.getLogger(__name__)
 
 ignore_username = ["Nara"]
 
+
 def suggestion(
     post_id: int,
     user_id: list[int],  # list of user IDs to whom the suggestion is made
