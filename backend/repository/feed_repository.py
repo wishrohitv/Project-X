@@ -244,9 +244,7 @@ def _query_posts(
                     "file_type": feed[1].file_type,
                     "file_extension": feed[1].file_extension,
                     "visibility": feed[1].visibility,
-                    "parent_post": _get_parent_post(
-                        feed[1].parent_post_id, session_user_id
-                    )
+                    "parent_post": feed[1].parent_post_id
                     if not feed[1].is_reply
                     else None,  # Check if post's 'is_reply=True' send None because
                     "created_at": feed[1].created_at.isoformat(),
@@ -272,76 +270,5 @@ def _query_posts(
 
         return feed_obj
 
-    finally:
-        session.close()
-
-
-def _get_parent_post(post_id: int, session_user_id: int | None = None):
-    session = SessionLocal()
-    try:
-        conditions = []
-        # Fetch post by ID
-        conditions.append(Posts.id == post_id)
-
-        # Check post visibility
-        if session_user_id:
-            # Check owner of the post
-            post = session.query(Posts).where(Posts.id == post_id).first()
-            if not post:
-                return {"status": 404, "error": "Post not found"}
-
-            if post.user_id == session_user_id:
-                # Check whether post's visibility is true or false
-                if not post.visibility:
-                    return {"status": 403, "error": "Post is private"}
-
-                # Fetch only public posts
-                conditions.append(Posts.visibility)
-
-        stmt = (
-            select(
-                Posts,
-                Users.username,
-                Users.name,
-                Profile.media_url,
-                Profile.media_public_id,
-                Profile.file_extension,
-            )
-            .join_from(Users, Posts)
-            .join_from(Users, Profile)
-            .where(*conditions)
-        )
-
-        result = session.execute(stmt).fetchone()
-        if not result:
-            return {"status": 204, "message": "No posts found"}
-
-        post = {
-            "user": {
-                "username": result.username,
-                "name": result.name,
-                "user_id": result[0].user_id,
-                "profile_img_url": result.media_url
-                if USE_CLOUDINARY_STORAGE
-                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_image', filename=fname(result[3], result[4]))}",
-            },
-            "post": {
-                "post_id": result[0].id,
-                "text": result[0].text,
-                "file_type": result[0].file_type,
-                "file_extension": result[0].file_extension,
-                "created_at": result[0].created_at.isoformat(),
-                "age_rating": result[
-                    0
-                ].age_rating.value,  # Return Enum class from db and get its value from
-                "post_media_url": result[0].media_url
-                if USE_CLOUDINARY_STORAGE
-                else f"{Settings.API_ROOT_URL or (request.host_url)[:-1]}{url_for('return_assets.serve_post_media', filename=fname(result[0].media_public_id, result[0].file_extension, post=True))}",
-            },
-        }
-        return {"status": 200, "data": post}
-    except Exception as e:
-        Log.exception("Error retrieving post: %s", e)
-        return {"status": 500, "error": "Internal Server Error"}
     finally:
         session.close()
