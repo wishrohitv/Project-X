@@ -327,7 +327,7 @@ def _get_parent_post(post_id: int, session_user_id: int | None = None):
             },
             "post": {
                 "post_id": result[0].id,
-                "title": result[0].text,
+                "text": result[0].text,
                 "file_type": result[0].file_type,
                 "file_extension": result[0].file_extension,
                 "created_at": result[0].created_at.isoformat(),
