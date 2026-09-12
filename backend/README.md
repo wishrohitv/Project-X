@@ -1,7 +1,7 @@
 
 # Project-X — Backend
 
-This directory contains the backend for Project Project-X — a lightweight social-sharing service for posts and meme templates. The backend is built with Flask, SQLAlchemy and provides REST APIs, background tasks, and real-time notifications.
+This directory contains the backend for Project Project-X — a social-sharing service for posts and meme templates. The backend is built with Flask, SQLAlchemy and provides REST APIs, background tasks, and real-time notifications.
 
 ## Quick Overview
 
